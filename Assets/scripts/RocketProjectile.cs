@@ -5,32 +5,49 @@ public class RocketProjectile : MonoBehaviour
     public float speed = 30f;
     public float lifeTime = 5f;
 
+    [Tooltip("The object that fired this rocket. Set by Shoting.Fire() right after Instantiate.")]
+    public Transform owner;
+
+    private Rigidbody rb;
+
     void Start()
     {
         Destroy(gameObject, lifeTime);
 
-        GameObject drone = GameObject.FindGameObjectWithTag("Player");
-        if (drone != null)
+        // Hits are detected through trigger events, not OnCollisionEnter: a kinematic Rigidbody
+        // generates no collisions against the turret's static colliders. See docs/decisions.md #8.
+        // The prefab's Continuous CCD is a no-op on a kinematic body - do not rely on it.
+        rb = GetComponent<Rigidbody>();
+        rb.isKinematic = true;
+        rb.useGravity = false;
+        rb.interpolation = RigidbodyInterpolation.Interpolate; // motion runs in FixedUpdate (50 Hz)
+
+        GetComponent<Collider>().isTrigger = true;
+
+        if (owner == null)
         {
-            Collider rocketCol = GetComponent<Collider>();
-            Collider[] droneCols = drone.GetComponentsInChildren<Collider>();
-            foreach (var dc in droneCols)
-            {
-                Physics.IgnoreCollision(rocketCol, dc);
-            }
+            Debug.LogWarning("RocketProjectile: owner not set - the rocket will destroy itself on its own shooter.");
         }
     }
 
-    void Update()
+    void FixedUpdate()
     {
-        transform.position += transform.forward * speed * Time.deltaTime;
+        // FixedUpdate, not Update: the 0.6 m step is shorter than the collider (0.986 m along Z),
+        // so successive test positions overlap and nothing can slip through. In Update() this
+        // would depend on frame rate. Holds up to speed ~49 m/s at a 0.02 fixed timestep.
+        rb.MovePosition(rb.position + transform.forward * speed * Time.fixedDeltaTime);
     }
 
-    void OnCollisionEnter(Collision collision)
+    void OnTriggerEnter(Collider other)
     {
-        Debug.Log("Rocket hit: " + collision.gameObject.name);
+        // Own shooter - IsChildOf is true for owner itself, so this covers its whole hierarchy.
+        if (owner != null && other.transform.IsChildOf(owner)) return;
 
-        EnemyTurret turret = collision.gameObject.GetComponentInParent<EnemyTurret>();
+        Debug.Log("Rocket hit: " + other.gameObject.name);
+
+        // GetComponentInParent, not GetComponent: EnemyTurret sits on the empty parent while the
+        // colliders are on its children. See docs/decisions.md #4.
+        EnemyTurret turret = other.GetComponentInParent<EnemyTurret>();
         if (turret != null)
         {
             turret.TakeDamage(10);

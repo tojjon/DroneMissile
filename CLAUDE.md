@@ -69,30 +69,45 @@ serialized public fields set in the Inspector.
 
 | Tag | On | Read by |
 |---|---|---|
-| `Player` | the drone root | `EnemyTurret` (targeting), `EnemyProjectile` (damage), `RocketProjectile` (self-collision) |
-| `Enemy` | turret objects | `EnemyProjectile` (self-collision) |
+| `Player` | the drone root | `EnemyTurret` (targeting), `EnemyProjectile` (damage) |
+| `Enemy` | turret objects | **nothing — no longer read by any code** |
 
 `Player` is a Unity built-in tag; `Enemy` is the only custom tag declared in
-`ProjectSettings/TagManager.asset`.
+`ProjectSettings/TagManager.asset`. Self-collision used to be tag-driven; since
+[decision #8](docs/decisions.md) each projectile gets an explicit `owner` transform instead, so
+`Enemy` survives only as semantic labelling. Leave it in place, but don't wire new logic to it.
 
 **Combat flow.** Both directions are symmetric but do *not* share code:
 
-- Player: `Shoting` instantiates `rocket.prefab` (`RocketProjectile`) → on collision walks
+- Player: `Shoting` instantiates `rocket.prefab` (`RocketProjectile`) → on trigger walks
   `GetComponentInParent<EnemyTurret>()` and calls `TakeDamage(10)` — damage is hardcoded at the
   call site, not a field on the projectile.
 - Enemy: `EnemyTurret` tracks the player within `detectionRange`, rotates `barrel` toward it, and
-  instantiates `enemy_rocket.prefab` (`EnemyProjectile`) → on collision calls
+  instantiates `enemy_rocket.prefab` (`EnemyProjectile`) → on trigger calls
   `DroneHealth.TakeDamage(damage)`, where `damage` *is* a projectile field.
+
+Both spawners set the projectile's `owner` field to their own `transform` right after `Instantiate`.
+That is the self-hit filter — both projectiles spawn partly inside their shooter's collider, so a
+missing `owner` means the projectile detonates on its muzzle. It is logged as a warning, not silent.
 
 Only `EnemyTurret` actually dies (`Destroy(gameObject)`). `DroneHealth` at 0 HP just logs
 `"Drone destroyed!"` — there is no death, respawn, or game-over path yet.
 
-**Projectiles are transform-driven, not physics-driven.** Both move via
-`transform.position += transform.forward * speed * Time.deltaTime` in `Update()`, yet detect hits
-with `OnCollisionEnter`. Each disables collision with its own shooter in `Start()` via
-`Physics.IgnoreCollision` over `GetComponentsInChildren<Collider>()` — that is why a projectile
-prefab needs a non-trigger `Collider` and a `Rigidbody`, and why fast projectiles can tunnel through
-thin geometry. Lifetime is a `Destroy(gameObject, lifeTime)` timer.
+**Projectiles are kinematic triggers, driven by `MovePosition`.** Both move via
+`rb.MovePosition(rb.position + transform.forward * speed * Time.fixedDeltaTime)` in `FixedUpdate`
+and detect hits with `OnTriggerEnter`. A projectile prefab therefore needs a `Collider` *and* a
+kinematic `Rigidbody`: the trigger message only fires against the turret's static colliders because
+a Rigidbody is present. Lifetime is a `Destroy(gameObject, lifeTime)` timer.
+
+`Start()` sets `isKinematic`, `useGravity`, `interpolation` and `isTrigger` **from code**, which
+overrides the prefab — the prefabs still read `Is Kinematic ✔ / Continuous` in the Inspector, and
+the code is authoritative. Two constraints hold this together, both explained in
+[decision #8](docs/decisions.md) — don't undo either while "cleaning up":
+
+- Motion must stay in `FixedUpdate`, not `Update()`. Trigger tests are discrete, so hit detection
+  relies on the per-step displacement being shorter than the projectile's own collider (0.986 m
+  along Z). In `Update()` that distance scales with frame rate and the bug returns below ~30 fps.
+- `speed` must stay under **~49 m/s** for the same reason. Faster projectiles tunnel again.
 
 **Drone flight** (`DroneControls`) is the one physics-driven component: `FixedUpdate` sums keyboard
 and transmitter input, then `rb.AddForce(transform.up * throttle)` plus `rb.MoveRotation`. Thrust is

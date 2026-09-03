@@ -59,6 +59,12 @@ public class Shoting : MonoBehaviour
             return;
         }
 
-        Instantiate(rocketPrefab, firePoint.position, firePoint.rotation);
+        GameObject rocket = Instantiate(rocketPrefab, firePoint.position, firePoint.rotation);
+
+        // Tell the rocket who fired it so it can filter out self-hits. This script sits on the
+        // drone root, which is exactly the hierarchy the rocket must ignore - it spawns partly
+        // inside the drone's own collider.
+        RocketProjectile proj = rocket.GetComponent<RocketProjectile>();
+        if (proj != null) proj.owner = transform;
     }
 }

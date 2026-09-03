@@ -7,38 +7,21 @@ některé věci označovaly jako otevřené, které už jsou hotové, a naopak.
 
 ## Bugy
 
-### 1. Rakety hráče prolétávají skrz turret bez kolize
+### ~~1. Rakety hráče prolétávají skrz turret bez kolize~~
 
-**Stav:** aktivní. **Root cause nalezen** `[OVĚŘENO 03.09.2026]`.
+**Stav: OPRAVENO** `[OVĚŘENO 03.09.2026]`. Zvolena varianta „trigger na kinematickém tělese" —
+zdůvodnění a co to vylučuje je v [rozhodnutí #8](decisions.md).
 
-Oba prefaby projektilů mají **`isKinematic: 1`**:
+Root cause byl, že kinematické Rigidbody negeneruje `OnCollisionEnter` proti statickým colliderům
+turretu, a `Continuous` CCD na `rocket.prefab` je na kinematickém tělese no-op. Oprava v obou
+projektilech: collider na `isTrigger`, `OnCollisionEnter` → `OnTriggerEnter`, pohyb přes
+`rb.MovePosition` ve `FixedUpdate` (frameratová nezávislost) a self-hit filtr přes explicitní
+`owner` místo `Physics.IgnoreCollision` podle tagu.
 
-| Prefab | `isKinematic` | `collisionDetection` | `useGravity` |
-|---|---|---|---|
-| `rocket.prefab` | **1 (ano)** | 1 = Continuous | 0 |
-| `enemy_rocket.prefab` | **1 (ano)** | 0 = Discrete | 0 |
-
-Tady je ta past: **Unity neaplikuje CCD na kinematické Rigidbody.** Nastavené `Continuous` na raketě
-hráče je tedy no-op — v Inspectoru to vypadá vyřešeně, ale nefunguje to. Navíc kinematické těleso
-negeneruje `OnCollisionEnter` proti statickým colliderům (bez Rigidbody).
-
-Zbytek řetězce je v pořádku a **není potřeba řešit**, i když to poznámky ze session uváděly jako
-otevřené:
-
-- `RocketProjectile.OnCollisionEnter` už používá `GetComponentInParent<EnemyTurret>()` ✔
-- Collidery projektilů nejsou triggery (`isTrigger: 0`) ✔
-- `turret` parent i `Turret_Base`/`Turret_Barrel` mají collidery ✔
-
-**K rozhodnutí `[OTEVŘENÉ]`:** projektily se hýbou přes `transform.position` v `Update()`, což je
-s Rigidbody fyzikou v rozporu — proto je asi někdo nastavil kinematické. Dvě čisté cesty:
-
-- **A)** Nechat kinematické a přejít na `Physics.SphereCast`/`Raycast` mezi snímky pro detekci
-  zásahu (spolehlivé, ale je to vlastně hitscan mezi framy — s [rozhodnutím #3](decisions.md) to
-  není v rozporu, projektil dál fyzicky letí a je uhýbatelný).
-- **B)** Přejít na plnou fyziku: `isKinematic = 0`, rychlost přes `rb.linearVelocity`, CCD
-  `ContinuousDynamic`, a smazat pohyb v `Update()`.
-
-Varianta B je fyzikálně správnější, A je méně invazivní. Nerozhodnuto.
+Vedlejší efekty, které z toho vypadly a jsou žádoucí: projektily teď mizí při zásahu terénu místo
+aby jím prolétly do `lifeTime`, a `EnemyProjectile` už při každém výstřelu nevolá
+`FindGameObjectsWithTag`. Zbývá kosmetický úklid — prefaby v Inspectoru dál ukazují
+`Is Kinematic` a `Continuous`, autoritativní je kód ve `Start()`.
 
 ### 2. Turret míří „nad hráče"
 
@@ -89,7 +72,7 @@ smrti hráče, nemá smysl komponentu jen tak přidat.
 
 ### Damage rakety hráče je hardcoded
 
-`RocketProjectile.OnCollisionEnter` volá `turret.TakeDamage(10)` — číslo je zadrátované v místě
+`RocketProjectile.OnTriggerEnter` volá `turret.TakeDamage(10)` — číslo je zadrátované v místě
 volání, zatímco `EnemyProjectile` má `damage` jako pole v Inspectoru. Asymetrie bez důvodu.
 
 ### Duplikovaná detekce vysílačky

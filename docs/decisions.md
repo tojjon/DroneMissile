@@ -107,3 +107,36 @@ zjistit mapování pro novou vysílačku — je to nástroj, ne zbytek po debugo
 **Vylučuje:** Smazání toho logu jako „cleanup".
 
 **Kde:** [reference/radiomaster-pocket.md](reference/radiomaster-pocket.md)
+
+---
+
+## #8 — Zásah projektilu se detekuje triggerem, ne kolizí
+
+**Rozhodnutí:** Oba projektily zůstávají **kinematické** a jejich collider je **trigger**. Zásah
+řeší `OnTriggerEnter`, pohyb je `rb.MovePosition` ve `FixedUpdate`, a vlastního střelce filtruje
+explicitní pole `owner` předané při `Instantiate`.
+
+**Proč:** Kinematické Rigidbody negeneruje `OnCollisionEnter` proti statickým colliderům, a všechny
+collidery turretu statické jsou — proto rakety hráče procházely turretem (bug #1). Kinematické
+těleso s **trigger** colliderem ale trigger zprávy proti statickým colliderům generuje.
+Alternativa „plná fyzika" by fungovala taky, jenže dron má `mass 0.0075` a projektil `mass 1` —
+každý zásah by dronem odstřelil. Trigger dává detekci se **nulovou fyzikální reakcí**, což je přesně
+to, co dosavadní transform-driven model měl.
+
+**Vylučuje:**
+
+- Spoléhání na `OnCollisionEnter` u projektilů. Vypadá to jako správná Unity cesta a tiše nefunguje.
+- Přidávání CCD (`Continuous`, `ContinuousDynamic`) jako řešení prolétávání — na kinematickém
+  tělese je to no-op.
+- Přesun pohybu zpátky do `Update()`. Tam posun závisí na frameratu a při ~30 fps začne přesahovat
+  délku collideru, čímž se prolétávání vrátí.
+- `speed` nad **~49 m/s** bez znovuotevření tohoto rozhodnutí. Záruka „nic nepropadne" stojí na tom,
+  že posun za fyzikální krok (`speed × 0,02`) je menší než délka collideru projektilu (0,986 m).
+- Návrat k `Physics.IgnoreCollision` na tag jako filtru self-hitu. Nepokrývalo to `turret` root,
+  který je `Untagged`, má vlastní collider a spawnuje se na něm nepřátelská raketa.
+
+**Cena:** Tag `Enemy` tím ztratil jediné použití v kódu — zůstává ve scéně i v `TagManager.asset`
+jako sémantické značení, ale nic ho už nečte. Prefaby v Inspectoru dál ukazují `Is Kinematic` a
+`Continuous`; autoritativní je kód ve `Start()`.
+
+**Kde:** [design/weapons.md](design/weapons.md), [reference/unity-gotchas.md](reference/unity-gotchas.md)

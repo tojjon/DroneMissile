@@ -49,7 +49,14 @@ public class EnemyTurret : MonoBehaviour
     void Fire()
     {
         if (projectilePrefab == null || firePoint == null) return;
-        Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+
+        GameObject projectile = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+
+        // Tell the projectile who fired it so it can filter out self-hits. This script sits on the
+        // empty `turret` parent, so its hierarchy covers Turret_Base, Turret_Barrel and the
+        // parent's own collider - which TurretFirePoint spawns the projectile right on top of.
+        EnemyProjectile proj = projectile.GetComponent<EnemyProjectile>();
+        if (proj != null) proj.owner = transform;
     }
 
     public void TakeDamage(int amount)

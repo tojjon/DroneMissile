@@ -14,9 +14,9 @@ a nemá být žádný raycast pro střelbu, přesnost v procentech ani rozptyl.
 | Parametr | Hodnota | Kde |
 |---|---|---|
 | `fireRate` | 0,5 s mezi výstřely | `Shoting` |
-| `speed` | 30 | `rocket.prefab` |
+| `speed` | 30 (**strop ~49**, viz níž) | `rocket.prefab` |
 | `lifeTime` | 5 s | `rocket.prefab` |
-| damage turretu | **10, hardcoded** | `RocketProjectile.OnCollisionEnter` |
+| damage turretu | **10, hardcoded** | `RocketProjectile.OnTriggerEnter` |
 
 Raketa je **nevedená** — letí přímo ve směru, ve kterém byla vypuštěna (`transform.forward` z
 `FirePoint`). Turret má 30 HP a raketa dává 10 → **3 zásahy na zničení**.
@@ -24,10 +24,13 @@ Raketa je **nevedená** — letí přímo ve směru, ve kterém byla vypuštěna
 Poznámka k asymetrii: damage rakety hráče je zadrátovaný v místě volání, kdežto nepřátelský projektil
 má `damage` jako pole v Inspectoru. Není to záměr, jen to tak vzniklo.
 
-## Známý problém
+## Strop rychlosti projektilu
 
-Rakety občas prolétnou turretem bez kolize. Root cause je diagnostikovaný a je fyzikální, ne
-designový — viz [backlog.md](../backlog.md).
+`speed` nesmí přesáhnout **~49 m/s** (u obou stran). Není to designové rozhodnutí, je to technický
+limit detekce zásahu: ta je diskrétní a spolehlivá jen dokud je posun za fyzikální krok
+(`speed × 0,02` s) menší než délka collideru projektilu (0,986 m). Nad tím projektily začnou
+prolétávat cíli. Kdyby byla potřeba rychlejší raketa, je nutné znovu otevřít
+[rozhodnutí #8](../decisions.md), ne jen zvýšit číslo.
 
 ## Otevřené otázky `[OTEVŘENÉ]`
 
