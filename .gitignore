@@ -1,0 +1,70 @@
+# ---------------------------------------------------
+# Unity generovane adresare (nikdy necommitovat)
+# ---------------------------------------------------
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Meta soubory se ignoruji jen tam, kde je ignorovan i samotny asset
+!/[Aa]ssets/**/*.meta
+
+# ---------------------------------------------------
+# Generovane projektove soubory (Unity je vytvori znovu)
+# ---------------------------------------------------
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+ExportedObj/
+
+# ---------------------------------------------------
+# IDE
+# ---------------------------------------------------
+.vs/
+.idea/
+# .vscode: konfiguraci od Unity chceme ve verzovani, zbytek ne
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+
+# ---------------------------------------------------
+# Buildy a balicky
+# ---------------------------------------------------
+*.apk
+*.aab
+*.app
+*.ipa
+*.unitypackage
+*.unitypackage.meta
+
+# ---------------------------------------------------
+# Ruzne
+# ---------------------------------------------------
+sysinfo.txt
+crashlytics-build.properties
+.DS_Store
+Thumbs.db
+
+# Addressables
+/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*

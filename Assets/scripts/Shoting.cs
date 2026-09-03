@@ -1,0 +1,64 @@
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
+
+public class Shoting : MonoBehaviour
+{
+    public GameObject rocketPrefab;
+    public Transform firePoint;
+    public float fireRate = 0.5f; // seconds between shots
+
+    private Joystick transmitter;
+    private float nextFireTime = 0f;
+    private bool wasPressed = false;
+
+    void Start()
+    {
+        // Reuse the same device-finding logic as DroneControls
+        foreach (var joystick in Joystick.all)
+        {
+            if (joystick.displayName.Contains("Joystick1") || joystick.name.Contains("Joystick1"))
+            {
+                transmitter = joystick;
+                break;
+            }
+        }
+
+        if (transmitter == null && Joystick.all.Count > 0)
+        {
+            transmitter = Joystick.all[Joystick.all.Count - 1];
+        }
+    }
+
+    void Update()
+    {
+        bool triggerPressed = false;
+
+        // Transmitter trigger
+        if (transmitter != null)
+        {
+            var trigger = transmitter.TryGetChildControl<ButtonControl>("trigger");
+            if (trigger != null) triggerPressed = trigger.isPressed;
+        }
+
+        // Keyboard fallback (Spacebar)
+        if (Keyboard.current.spaceKey.isPressed) triggerPressed = true;
+
+        if (triggerPressed && Time.time >= nextFireTime)
+        {
+            Fire();
+            nextFireTime = Time.time + fireRate;
+        }
+    }
+
+    void Fire()
+    {
+        if (rocketPrefab == null || firePoint == null)
+        {
+            Debug.LogWarning("Rocket prefab or FirePoint not assigned!");
+            return;
+        }
+
+        Instantiate(rocketPrefab, firePoint.position, firePoint.rotation);
+    }
+}

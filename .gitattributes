@@ -1,0 +1,33 @@
+# Normalizace konců řádků
+* text=auto
+
+# Unity YAML assety - merge pres UnityYAMLMerge (nastaveno v git config jako driver "unityyamlmerge")
+*.unity     merge=unityyamlmerge eol=lf
+*.prefab    merge=unityyamlmerge eol=lf
+*.asset     merge=unityyamlmerge eol=lf
+*.mat       merge=unityyamlmerge eol=lf
+*.anim      merge=unityyamlmerge eol=lf
+*.controller merge=unityyamlmerge eol=lf
+*.physicMaterial merge=unityyamlmerge eol=lf
+*.meta      merge=unityyamlmerge eol=lf
+
+# Binarni assety - zadny textovy diff ani merge
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.tga       binary
+*.psd       binary
+*.tif       binary
+*.gif       binary
+*.ico       binary
+*.fbx       binary
+*.obj       binary
+*.blend     binary
+*.wav       binary
+*.mp3       binary
+*.ogg       binary
+*.dll       binary
+*.so        binary
+*.a         binary
+*.pdf       binary
+*.cubemap   binary
