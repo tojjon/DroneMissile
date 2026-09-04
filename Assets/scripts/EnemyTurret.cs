@@ -45,11 +45,13 @@ public class EnemyTurret : MonoBehaviour
 
         if (direction.sqrMagnitude > 0.01f)
         {
-            // LookRotation's default up hint is degenerate when the target is straight overhead,
-            // which flips the roll and makes the barrel visibly snap. The drone flies over the
-            // turret routinely, so pick a non-parallel hint in that case.
+            // LookRotation's default up hint is degenerate when the target is straight overhead.
+            // Fall back to world forward, which can never be parallel to a near-vertical aim.
+            // (Not barrel.forward - that tracks the aim, so it is parallel in exactly the case
+            // this guards against.) Only the roll is ill-defined, and both the capsule mesh and
+            // the on-axis muzzle are roll-symmetric, so this is correctness, not a visible fix.
             Vector3 upHint = Mathf.Abs(Vector3.Dot(direction.normalized, Vector3.up)) > 0.99f
-                ? barrel.forward
+                ? Vector3.forward
                 : Vector3.up;
 
             Quaternion targetRotation = Quaternion.LookRotation(direction, upHint);

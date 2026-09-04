@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
+using UnityEngine.SceneManagement;
 
 public class DroneControls : MonoBehaviour
 {
@@ -13,12 +14,57 @@ public class DroneControls : MonoBehaviour
     [Header("Transmitter Calibration")]
     public bool useTransmitter = true;
 
+    [Header("Crash / Reset")]
+    [Tooltip("The drone must climb this far above its spawn height before a collision counts as a crash.")]
+    public float armAltitude = 0.5f;
+
+    [Tooltip("Falling below this Y reloads the scene even if no collision was reported. Terrain tiles sit at y = -57.")]
+    public float killY = -70f;
+
+    [Tooltip("How long the death message stays up before the scene reloads. Physics keeps running.")]
+    public float deathDelay = 1f;
+
+    [Header("Stun")]
+    [Tooltip("How long the drone cannot be stunned again after a stun ends.")]
+    public float stunImmunity = 2f;
+
     private Rigidbody rb;
     private Joystick transmitter;
+
+    // Crash state. `armed` is a one-way latch - see the comment in FixedUpdate.
+    private bool armed;
+    private bool hasCrashed;
+    private float reloadAt; // absolute Time.time, like the stun deadlines; valid once hasCrashed
+    private float spawnY;
+
+    // Stun deadlines. Both are absolute Time.time values, never countdowns. See Stun().
+    private float stunnedUntil;
+    private float stunnableAgainAt;
+
+    // Read-only state for DroneHUD. Stun is a pair of deadlines rather than a flag, so there is
+    // nothing meaningful for the HUD to poll without this; hasCrashed stays private because only
+    // Crash() may ever set it.
+    public bool IsStunned => !hasCrashed && Time.time < stunnedUntil;
+    public bool HasCrashed => hasCrashed;
+
+    void Awake()
+    {
+        spawnY = transform.position.y;
+    }
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
+
+        // Continuous CCD, set from code so it cannot be lost in the Inspector. With Discrete the
+        // 0.387 m tall collider passes straight through the terrain heightfield above ~19.4 m/s
+        // (collider height / 0.02 s step) - and simply falling off the pad arrives at ~25 m/s.
+        // Not ContinuousSpeculative: it generates phantom contacts across adjacent heightfield
+        // triangles, and here one phantom contact is a silent scene reload.
+        // This does not contradict decisions.md #8 - that rules CCD out on the *kinematic*
+        // projectiles, where it is a no-op. The drone is dynamic. See decisions.md #11.
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
 
         foreach (var device in InputSystem.devices)
         {
@@ -60,6 +106,34 @@ public class DroneControls : MonoBehaviour
 
     void FixedUpdate()
     {
+        // Crashed: input is dead, but physics keeps stepping so the wreck tumbles under the death
+        // message. Nothing here can fire twice - OnCollisionEnter tests !hasCrashed, the kill plane
+        // check sits below this return, and Stun() bails on hasCrashed.
+        if (hasCrashed)
+        {
+            if (Time.time >= reloadAt) SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            return;
+        }
+
+        // Kill plane, deliberately NOT gated on `armed`: the ground slab is a floating 23 x 29 m
+        // platform and the terrain sits 57 m below it. Drifting off the edge before ever arming is
+        // a fall the collision path can miss, and nothing in the project can restart a run.
+        if (transform.position.y < killY)
+        {
+            Crash();
+            return;
+        }
+
+        // Arming latch. Without it the drone reloads the scene about once a second forever: it
+        // spawns resting on the pad, so the very first contact would fire at t = 0. A grace *timer*
+        // only works by accident, and "armed once throttle is commanded" arms immediately whenever
+        // the transmitter throttle stick is not parked at the bottom - (rawThrottle + 1) / 2 is
+        // never negative.
+        if (!armed && transform.position.y > spawnY + armAltitude) armed = true;
+
+        // Stunned: no thrust and no MoveRotation, so the drone holds its last attitude and falls.
+        if (Time.time < stunnedUntil) return;
+
         float throttleInput = 0f;
         float pitchInput = 0f;
         float rollInput = 0f;
@@ -107,6 +181,37 @@ public class DroneControls : MonoBehaviour
         );
 
         rb.MoveRotation(rb.rotation * deltaRotation);
+    }
+
+    // Any solid contact ends the run - terrain, the ground slab, a turret. The drone has no health;
+    // see decisions.md #10. Projectiles never reach this: both are trigger colliders.
+    void OnCollisionEnter(Collision collision)
+    {
+        if (armed && !hasCrashed) Crash();
+    }
+
+    // Takes control away for `seconds`. Called by EnemyProjectile on a hit.
+    public void Stun(float seconds)
+    {
+        if (hasCrashed || Time.time < stunnableAgainAt) return;
+
+        // A deadline, not a countdown: Stun() runs inside the physics step, so a value decremented
+        // in FixedUpdate would gain or lose a whole step depending on ordering. Mathf.Max so a short
+        // stun can never truncate a longer one already running.
+        stunnedUntil = Mathf.Max(stunnedUntil, Time.time + seconds);
+
+        // I-frames. The scene sets EnemyTurret.fireRate to 0.1 (ten shots a second) - without this,
+        // entering turret range means being stunned continuously until the drone hits the ground.
+        stunnableAgainAt = stunnedUntil + stunImmunity;
+    }
+
+    // Arms the death timer instead of reloading on the spot. FixedUpdate performs the reload once
+    // `reloadAt` passes, which buys DroneHUD a beat to show the death message while the wreck falls.
+    void Crash()
+    {
+        hasCrashed = true;
+        reloadAt = Time.time + deathDelay;
+        Debug.Log("Drone crashed - reloading in " + deathDelay + " s.");
     }
 
     float ReadAxis(string controlName)

@@ -44,19 +44,19 @@ Oprava: v kódu se míří z `firePoint.position`, ve scéně se mesh odstrčil 
 smazal `CapsuleCollider` — po srovnání hlavně by z něj zůstal 4,5 m vysoký neviditelný sloup nad
 základnou, do kterého by se registrovaly zásahy do prázdna.
 
-### 3. Dron nedostává žádný damage
+### ~~3. Dron nedostává žádný damage~~
 
-**Stav:** aktivní, **dosud nezaznamenané** `[OVĚŘENO 03.09.2026]`.
+**Stav: VYŘEŠENO** `[OVĚŘENO 04.09.2026]` — zrušením damage modelu, ne jeho dodělením. Zdůvodnění
+a co to vylučuje je v [rozhodnutí #10](decisions.md).
 
-**Komponenta `DroneHealth` není ve scéně na žádném objektu.** `EnemyProjectile.OnTriggerEnter`
-sice trefí objekt s tagem `Player`, ale `GetComponent<DroneHealth>()` vrátí `null` a kód tiše
-neudělá nic. Nepřátelské projektily jsou aktuálně **naprosto neškodné**.
+Root cause byl, že komponenta `DroneHealth` nebyla ve scéně na žádném objektu:
+`EnemyProjectile.OnTriggerEnter` sice trefil objekt s tagem `Player`, ale
+`GetComponent<DroneHealth>()` vrátil `null` a kód tiše neudělal nic.
 
-Po opravě bugů #1 a #2 je to **jediná** věc, která ještě stojí mezi nepřátelskou raketou a dronem —
-zásah se od téhle chvíle reálně registruje, jen se z něj nic nestane.
-
-Souvisí s otevřenou otázkou v [concept.md](concept.md): dokud není rozhodnuté, co se má stát při
-smrti hráče, nemá smysl komponentu jen tak přidat.
+Blokovala to otevřená otázka #3 v [concept.md](concept.md) — dokud nebylo rozhodnuté, co se má stát
+při smrti hráče, nešlo komponentu jen tak přidat. Odpověď: **dron nemá HP vůbec.** `DroneHealth` je
+smazaná, jakýkoli dotek pevného objektu restartuje scénu a nepřátelská raketa místo damage bere na
+`stunDuration` sekund ovládání.
 
 ### 4. Turret vystřelí okamžitě při návratu hráče do dosahu
 
@@ -80,10 +80,17 @@ Doteď to nebylo poznat, protože turret stejně nemohl zasáhnout (bug #2). Po 
 pole v Inspectoru — vyzkoušet, jestli je 10 výstřelů/s hratelné, a srovnat scénu s docs (nebo docs
 se scénou, pokud se to ukáže jako lepší hra). `[OTEVŘENÉ]`
 
+`[AKTUALIZOVÁNO 04.09.2026]` Tohle číslo teď přímo určuje hratelnost stunu: 10 zásahů za sekundu
+proti 1s stunu by dron drželo bez ovládání až do dopadu. Řeší to `stunImmunity` (i-frames)
+v `DroneControls`, viz [rozhodnutí #10](decisions.md) — ale ta hodnota je obezlička kolem
+`fireRate: 0.1`. Když se `fireRate` srovná s docs (2 s), i-frames se dají snížit nebo zrušit.
+
 ### Damage rakety hráče je hardcoded
 
 `RocketProjectile.OnTriggerEnter` volá `turret.TakeDamage(10)` — číslo je zadrátované v místě
-volání, zatímco `EnemyProjectile` má `damage` jako pole v Inspectoru. Asymetrie bez důvodu.
+volání. `[AKTUALIZOVÁNO 04.09.2026]` Protějšek `EnemyProjectile.damage` už neexistuje (dron nemá HP,
+viz [rozhodnutí #10](decisions.md)), takže je to jediná zbývající zadrátovaná hodnota poškození —
+asymetrie zmizela, tenhle dluh zůstal.
 
 ### Duplikovaná detekce vysílačky
 
@@ -110,4 +117,3 @@ design dokumentů:
 - Letecký nepřítel — souboj dron vs. dron
 - Zpětný ráz při výstřelu ([design/weapons.md](design/weapons.md))
 - Expo/rate křivky sticků ([design/flight-model.md](design/flight-model.md))
-- Crash damage při nárazu do terénu

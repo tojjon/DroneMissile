@@ -25,11 +25,14 @@ střílet rakety, turret umí mířit a střílet zpět, turret má HP a dá se 
 
 Tohle nejsou bugy, tohle jsou nerozhodnuté věci. Žádná z nich není zadaná:
 
-- **Žádný game loop.** Není výhra, prohra, ani restart.
-- **Dron nemá smrt.** `DroneHealth` na 0 HP jen zaloguje `"Drone destroyed!"`. A hlavně —
-  komponenta **není ve scéně vůbec**, takže dron aktuálně nedostává damage (viz
-  [backlog.md](backlog.md)).
-- **Žádné UI.** Není vidět HP, throttle, počet raket, nic.
+- **Žádná výhra.** Prohra a restart už existují (viz níž), cíl ne — turret se dá zničit, ale nic
+  se tím neukončí.
+- **Žádné UI kolem restartu nad rámec hlášky.** Pád ukáže `YOU DIED` a po sekundě načte scénu —
+  žádné počítadlo pokusů, žádné „retry" tlačítko (restart input v projektu pořád neexistuje).
+  `[AKTUALIZOVÁNO 04.09.2026 — viz rozhodnutí #12]`
+- **HUD skoro žádné.** Existuje zaměřovací křížek uprostřed, červený rám při stunu a hláška při
+  smrti ([rozhodnutí #12](decisions.md)). Není vidět throttle, počet raket, nic dalšího. (HP dron
+  nemá — viz [rozhodnutí #10](decisions.md).)
 - **Žádný zvuk.**
 - **Žádná munice.** Rakety jsou nekonečné, jen s cooldownem `fireRate`.
 - **Jeden typ nepřítele.** Viz [design/enemies.md](design/enemies.md).
@@ -43,6 +46,11 @@ Tohle je potřeba rozhodnout dřív než cokoliv z toho výše, protože to urč
    arénová vlna nepřátel / časovka? Každá varianta chce jinou infrastrukturu.
 2. **Je to FPV, nebo third-person?** Ve scéně je `Main Camera` — chová se to jako FPV z pohledu
    dronu (což by koncept vyžadoval), nebo se dron pozoruje z boku? Na tom stojí celý „FPV" v názvu.
-3. **Umírá hráč?** Pokud ano, co pak — respawn, restart scény, konec? Pokud ne, k čemu je `DroneHealth`?
+3. ~~**Umírá hráč?**~~ **ROZHODNUTO 04.09.2026** — [rozhodnutí #10](decisions.md). Dron nemá HP;
+   `DroneHealth` je smazaná. Jakýkoli dotek pevného objektu (terén, plošina, turret) **znovu načte
+   scénu**, nepřátelská raketa místo damage na sekundu **bere ovládání**. Navazující otázka
+   (němý restart vs. „crashed / retry" obrazovka) je taky **ROZHODNUTA 04.09.2026** —
+   [rozhodnutí #12](decisions.md): němý není, pád ukáže hlášku a scéna se načte až po sekundě.
+   Plnou „retry" obrazovku s tlačítkem to ale nedělá; restart input pořád neexistuje.
 4. **Má být cílem přesnost, nebo přežití?** Určuje to, jestli přidat munici a jak agresivní mají
    být turrety.

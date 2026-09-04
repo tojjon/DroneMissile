@@ -10,10 +10,12 @@ public class RocketProjectile : MonoBehaviour
 
     private Rigidbody rb;
 
-    void Start()
+    // Awake, not Start: Awake runs synchronously inside Instantiate, so no physics step can ever
+    // observe this rocket as a non-trigger body. The rocket spawns partly inside the drone's own
+    // collider, kinematic-vs-*dynamic* does raise OnCollisionEnter, and the drone now reloads the
+    // scene on any collision - a one-step window here would reset the run on every shot.
+    void Awake()
     {
-        Destroy(gameObject, lifeTime);
-
         // Hits are detected through trigger events, not OnCollisionEnter: a kinematic Rigidbody
         // generates no collisions against the turret's static colliders. See docs/decisions.md #8.
         // The prefab's Continuous CCD is a no-op on a kinematic body - do not rely on it.
@@ -23,6 +25,11 @@ public class RocketProjectile : MonoBehaviour
         rb.interpolation = RigidbodyInterpolation.Interpolate; // motion runs in FixedUpdate (50 Hz)
 
         GetComponent<Collider>().isTrigger = true;
+    }
+
+    void Start()
+    {
+        Destroy(gameObject, lifeTime);
 
         if (owner == null)
         {

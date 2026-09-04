@@ -41,7 +41,12 @@ Hodnoty jsou rozdělené mezi kód a scénu, což je při ladění potřeba věd
 | | `linearDamping` | 0.3 |
 | | `angularDamping` | 0.5 |
 | | `useGravity` | ano |
-| | `collisionDetection` | Discrete |
+| | `collisionDetection` | **ContinuousDynamic** — nastavuje kód, viz [rozhodnutí #11](../decisions.md) |
+| | `interpolation` | **Interpolate** — nastavuje kód, tamtéž |
+
+Pozor: `collisionDetection` a `interpolation` se nastavují ve `DroneControls.Start()`, takže
+Inspector může ukazovat něco jiného — **autoritativní je kód**. Je to stejný kompromis jako
+u projektilů v [rozhodnutí #8](../decisions.md).
 
 Pozor na tu **masu 0,0075 kg** (7,5 g) proti `throttleForce` 15. Poměr síly k mase je extrémní, takže
 `throttleForce` je vůči hmotnosti velmi citlivý — kdo bude ladit odezvu, musí měnit obě čísla společně,
@@ -57,8 +62,11 @@ a otáčení okamžitě přestane. Reálný dron by ještě chvíli dorotovával
 
 1. **Má mít rotace inerci?** Přechod na `AddTorque` by byl fyzikálně věrnější, ale hůř se ovládá a
    znamená to přeladit všechny tři `*Speed` hodnoty. Pilot to pozná — chceme to?
-2. **Kolize dronu.** `collisionDetection` je Discrete a masa 7,5 g — co se má stát při nárazu do
-   terénu? Teď nic (dron nemá `DroneHealth`, viz [backlog.md](../backlog.md)). Crash damage? Odraz?
+2. ~~**Kolize dronu.**~~ **ROZHODNUTO 04.09.2026** — [rozhodnutí #10](../decisions.md).
+   Ani crash damage, ani odraz: **jakýkoli dotek pevného objektu znovu načte scénu.** Dron nemá HP,
+   `DroneHealth` je smazaná. `collisionDetection` se tím zároveň musel zvednout z Discrete na
+   ContinuousDynamic ([rozhodnutí #11](../decisions.md)) — s Discrete dron nad ~19,4 m/s terénem
+   propadával a pád nikdo nezachytil.
 3. **Chybí modely propeleru / motorů** — má tah reagovat na poškození jednotlivých motorů, nebo je
    dron „jeden kus"?
 4. **Rate profil.** Reálné acro vysílačky mají expo/rate křivky (nelineární odezva sticku). Teď je

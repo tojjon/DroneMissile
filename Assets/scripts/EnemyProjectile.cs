@@ -4,17 +4,21 @@ public class EnemyProjectile : MonoBehaviour
 {
     public float speed = 20f;
     public float lifeTime = 5f;
-    public int damage = 10;
+
+    [Tooltip("How long a hit takes control away from the drone. The drone has no health - see docs/decisions.md #10.")]
+    public float stunDuration = 1f;
 
     [Tooltip("The turret that fired this projectile. Set by EnemyTurret.Fire() right after Instantiate.")]
     public Transform owner;
 
     private Rigidbody rb;
 
-    void Start()
+    // Awake, not Start: Awake runs synchronously inside Instantiate, so no physics step can ever
+    // observe this projectile as a non-trigger body. That matters because kinematic-vs-*dynamic*
+    // does raise OnCollisionEnter (it is kinematic-vs-static that does not), and the drone now
+    // reloads the scene on any collision.
+    void Awake()
     {
-        Destroy(gameObject, lifeTime);
-
         // Hits are detected through trigger events, not OnCollisionEnter: a kinematic Rigidbody
         // generates no collisions against static colliders. See docs/decisions.md #8.
         rb = GetComponent<Rigidbody>();
@@ -23,6 +27,11 @@ public class EnemyProjectile : MonoBehaviour
         rb.interpolation = RigidbodyInterpolation.Interpolate; // motion runs in FixedUpdate (50 Hz)
 
         GetComponent<Collider>().isTrigger = true;
+    }
+
+    void Start()
+    {
+        Destroy(gameObject, lifeTime);
 
         if (owner == null)
         {
@@ -46,10 +55,12 @@ public class EnemyProjectile : MonoBehaviour
 
         if (other.CompareTag("Player"))
         {
-            DroneHealth health = other.GetComponent<DroneHealth>();
-            if (health != null)
+            // The drone has no health - a hit takes control away instead. See docs/decisions.md #10.
+            // GetComponentInParent, not GetComponent: same convention as docs/decisions.md #4.
+            DroneControls drone = other.GetComponentInParent<DroneControls>();
+            if (drone != null)
             {
-                health.TakeDamage(damage);
+                drone.Stun(stunDuration);
             }
         }
 
