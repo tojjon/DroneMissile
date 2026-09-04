@@ -23,37 +23,37 @@ aby jím prolétly do `lifeTime`, a `EnemyProjectile` už při každém výstře
 `FindGameObjectsWithTag`. Zbývá kosmetický úklid — prefaby v Inspectoru dál ukazují
 `Is Kinematic` a `Continuous`, autoritativní je kód ve `Start()`.
 
-### 2. Turret míří „nad hráče"
+### ~~2. Turret míří „nad hráče"~~
 
-**Stav:** aktivní. **Silná hypotéza** `[HYPOTÉZA]`, podložená ověřenými fakty.
+**Stav: OPRAVENO** `[OVĚŘENO 04.09.2026]`. Zdůvodnění a co to vylučuje je
+v [rozhodnutí #9](decisions.md).
 
-Poznámky ze session to nechávaly nediagnostikované s tím, že to bude souviset s `barrel.position` po
-restrukturalizaci hierarchie. Zjištěná fakta ukazují jinam:
+**Hypotéza „vadí pravděpodobně jen vizuál" neplatila.** Byly to dvě vady se stejnou příčinou:
 
-- `Turret_Barrel` je Unity **Capsule** primitiv (mesh `10208`) → jeho **dlouhá osa je Y**.
-- `EnemyTurret.Update()` míří přes `Quaternion.LookRotation(direction)`, což zarovnává **+Z**
-  (forward) na cíl.
+- **Vizuální:** mesh kapsle má dlouhou osu Y, `LookRotation` zarovnává +Z → hlaveň mířila bokem.
+- **Funkční, doteď nezaznamenané:** směr se počítal z `barrel.position` (pivot), ale projektil
+  spawnoval na `firePoint.position` = `(0, 0.64, 0.568)` × scale hlavně 2, tedy **1,28 m mimo osu
+  míření**. Střely letěly souběžně vedle hráče, konstantně na jakoukoli vzdálenost. Dron má collider
+  vysoký 0,387 m → nepřátelské projektily ho **nemohly zasáhnout nikdy**.
 
-Kapsle tedy míří na hráče *bokem* — její délka zůstane na směr míření kolmá, což vypadá přesně jako
-„hlaveň trčí vzhůru". Není to chyba výpočtu, je to neshoda mezi osou meshe (Y) a osou, kterou
-`LookRotation` zarovnává (Z).
+Ten `y: 0.64` tam byl proto, že někdo dal ústí na viditelný hrot té svislé kapsle — jedna neshoda
+konvence, dva symptomy.
 
-Ověřené vylučovací body: `Turret_Barrel` má `localScale (2,2,2)` — **uniformní**, takže skew
-z [rozhodnutí #4](decisions.md) to není, a `localRotation` je identita.
-
-**Fix k ověření:** obalit kapsli prázdným objektem otočeným o 90° kolem X (mesh pak míří po Z), nebo
-mířit `barrel.rotation = LookRotation(direction) * Quaternion.Euler(90, 0, 0)`. Pozor, že
-`TurretFirePoint` je posunutý po **Z** (`+0.568`) — směr střelby tedy už s +Z jako „vpřed" počítá,
-takže vadí pravděpodobně jen vizuál. Než se to opraví, je potřeba potvrdit, kam projektily reálně
-letí.
+Oprava: v kódu se míří z `firePoint.position`, ve scéně se mesh odstrčil do childa
+`Turret_BarrelMesh` (rotace 90° X), `TurretFirePoint` se posunul na osu +Z a z `turret` rootu se
+smazal `CapsuleCollider` — po srovnání hlavně by z něj zůstal 4,5 m vysoký neviditelný sloup nad
+základnou, do kterého by se registrovaly zásahy do prázdna.
 
 ### 3. Dron nedostává žádný damage
 
 **Stav:** aktivní, **dosud nezaznamenané** `[OVĚŘENO 03.09.2026]`.
 
-**Komponenta `DroneHealth` není ve scéně na žádném objektu.** `EnemyProjectile.OnCollisionEnter`
+**Komponenta `DroneHealth` není ve scéně na žádném objektu.** `EnemyProjectile.OnTriggerEnter`
 sice trefí objekt s tagem `Player`, ale `GetComponent<DroneHealth>()` vrátí `null` a kód tiše
 neudělá nic. Nepřátelské projektily jsou aktuálně **naprosto neškodné**.
+
+Po opravě bugů #1 a #2 je to **jediná** věc, která ještě stojí mezi nepřátelskou raketou a dronem —
+zásah se od téhle chvíle reálně registruje, jen se z něj nic nestane.
 
 Souvisí s otevřenou otázkou v [concept.md](concept.md): dokud není rozhodnuté, co se má stát při
 smrti hráče, nemá smysl komponentu jen tak přidat.
@@ -69,6 +69,16 @@ smrti hráče, nemá smysl komponentu jen tak přidat.
 ---
 
 ## Technický dluh
+
+### `fireRate` ve scéně nesouhlasí s docs
+
+Scéna má na turretu **`fireRate: 0.1`** (10 výstřelů za sekundu), `[OVĚŘENO]` tabulka
+v [design/enemies.md](design/enemies.md) uvádí **2 s**, což je i default v `EnemyTurret.cs`.
+Pravděpodobně zbytek po testování.
+
+Doteď to nebylo poznat, protože turret stejně nemohl zasáhnout (bug #2). Po jeho opravě je to jedno
+pole v Inspectoru — vyzkoušet, jestli je 10 výstřelů/s hratelné, a srovnat scénu s docs (nebo docs
+se scénou, pokud se to ukáže jako lepší hra). `[OTEVŘENÉ]`
 
 ### Damage rakety hráče je hardcoded
 

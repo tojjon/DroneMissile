@@ -140,3 +140,36 @@ jako sémantické značení, ale nic ho už nečte. Prefaby v Inspectoru dál uk
 `Continuous`; autoritativní je kód ve `Start()`.
 
 **Kde:** [design/weapons.md](design/weapons.md), [reference/unity-gotchas.md](reference/unity-gotchas.md)
+
+---
+
+## #9 — +Z je forward, a míří se z ústí
+
+**Rozhodnutí:** Napříč projektem platí **+Z = forward**. Mesh, který tu konvenci nesplňuje, se
+izoluje do **rotovaného child objektu**, ne do kompenzační rotace v kódu. A směr míření se počítá
+z **`firePoint.position`** (ústí), ne z `barrel.position` (pivot).
+
+**Proč:** Bug #2 byly dvě vady se stejnou příčinou. Unity primitivy (`Capsule` = mesh `10208`,
+`Cylinder`) mají dlouhou osu **Y**, ale `Quaternion.LookRotation` zarovnává **+Z** — hlaveň proto
+mířila na hráče bokem. A ústí bylo na `(0, 0.64, 0.568)` × scale hlavně 2, tedy **1,28 m mimo osu
+míření**: střela letěla souběžně s osou míření, ale trvale o 1,28 m vedle, konstantně na jakoukoli
+vzdálenost. Dron má collider vysoký 0,387 m, takže nepřátelské projektily ho nemohly zasáhnout
+nikdy. Ten `y: 0.64` tam byl přesně proto, že někdo dal ústí na viditelný hrot té svislé kapsle —
+jedna neshoda konvence, dva symptomy.
+
+**Vylučuje:**
+
+- Kompenzační rotaci v kódu míření (`LookRotation(dir) * Quaternion.Euler(90, 0, 0)`). Udělá
+  z „barrel forward" směr **dolů** a rozbije `firePoint.rotation`, na kterém stojí `Fire()`. Je to
+  přesně ten typ skryté vazby, který způsobil bug #1.
+- Vrácení `MeshFilter`/`MeshRenderer` zpátky na aim transform (`Turret_Barrel`). Vizuál patří do
+  childa `Turret_BarrelMesh` s rotací 90° X.
+- `TurretFirePoint` mimo osu **+Z** hlavně. Jakákoli složka X/Y na něm vrací systematické míjení.
+- Míření z `barrel.position`.
+- Nenulovou lokální rotaci na `TurretFirePoint` — `Fire()` spoléhá na to, že
+  `firePoint.rotation == barrel.rotation`.
+
+**Cena:** Míření z ústí je fixed-point iterace (otočením hlavně se ústí posune). Konverguje za snímek
+dva a `RotateTowards` to stejně rate-limituje, ale exaktní uzavřené řešení to není.
+
+**Kde:** [design/enemies.md](design/enemies.md), [reference/unity-gotchas.md](reference/unity-gotchas.md)

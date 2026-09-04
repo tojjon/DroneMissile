@@ -23,19 +23,36 @@ public class EnemyTurret : MonoBehaviour
 
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj != null) player = playerObj.transform;
+
+        if (barrel == null || firePoint == null)
+        {
+            Debug.LogWarning("EnemyTurret: barrel or firePoint not assigned - the turret will not aim.");
+        }
     }
 
     void Update()
     {
-        if (player == null) return;
+        if (player == null || barrel == null || firePoint == null) return;
 
         float distance = Vector3.Distance(transform.position, player.position);
         if (distance > detectionRange) return;
 
-        Vector3 direction = (player.position - barrel.position);
+        // Aim from the MUZZLE, not the pivot. The muzzle sits off the pivot axis, so aiming from
+        // the pivot leaves the shot travelling parallel to the player and missing by the muzzle
+        // offset - constantly, at any range. See docs/decisions.md #9. This is a fixed-point
+        // iteration (rotating the barrel moves the muzzle) and settles within a frame or two.
+        Vector3 direction = player.position - firePoint.position;
+
         if (direction.sqrMagnitude > 0.01f)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(direction);
+            // LookRotation's default up hint is degenerate when the target is straight overhead,
+            // which flips the roll and makes the barrel visibly snap. The drone flies over the
+            // turret routinely, so pick a non-parallel hint in that case.
+            Vector3 upHint = Mathf.Abs(Vector3.Dot(direction.normalized, Vector3.up)) > 0.99f
+                ? barrel.forward
+                : Vector3.up;
+
+            Quaternion targetRotation = Quaternion.LookRotation(direction, upHint);
             barrel.rotation = Quaternion.RotateTowards(barrel.rotation, targetRotation, turnSpeed * Time.deltaTime);
         }
 
@@ -50,11 +67,13 @@ public class EnemyTurret : MonoBehaviour
     {
         if (projectilePrefab == null || firePoint == null) return;
 
+        // firePoint has an identity local rotation, so firePoint.rotation == barrel.rotation and the
+        // projectile's forward is the aim direction. That is what the +Z-is-forward convention buys
+        // us - do not rotate the barrel by a compensating offset. See docs/decisions.md #9.
         GameObject projectile = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
 
         // Tell the projectile who fired it so it can filter out self-hits. This script sits on the
-        // empty `turret` parent, so its hierarchy covers Turret_Base, Turret_Barrel and the
-        // parent's own collider - which TurretFirePoint spawns the projectile right on top of.
+        // empty `turret` parent, so its hierarchy covers Turret_Base and Turret_Barrel.
         EnemyProjectile proj = projectile.GetComponent<EnemyProjectile>();
         if (proj != null) proj.owner = transform;
     }

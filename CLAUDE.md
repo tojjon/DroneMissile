@@ -90,6 +90,15 @@ Both spawners set the projectile's `owner` field to their own `transform` right 
 That is the self-hit filter — both projectiles spawn partly inside their shooter's collider, so a
 missing `owner` means the projectile detonates on its muzzle. It is logged as a warning, not silent.
 
+**`+Z` is forward everywhere, and the turret aims from the muzzle.** `EnemyTurret.Update()` computes
+`direction` from **`firePoint.position`**, not `barrel.position`: the muzzle sits off the pivot axis,
+so aiming from the pivot sends every shot flying parallel to the player, missing by the muzzle offset
+at any range. `Fire()` then spawns along `firePoint.rotation`, which equals `barrel.rotation` only
+because `TurretFirePoint` has an identity local rotation — keep it that way. Meshes that don't match
+the convention (Unity's `Capsule`/`Cylinder` are long along **Y**) belong in a rotated child, never in
+a compensating rotation applied to the aim transform. Both constraints are
+[decision #9](docs/decisions.md).
+
 Only `EnemyTurret` actually dies (`Destroy(gameObject)`). `DroneHealth` at 0 HP just logs
 `"Drone destroyed!"` — there is no death, respawn, or game-over path yet.
 
