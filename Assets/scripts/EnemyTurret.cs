@@ -17,10 +17,23 @@ public class EnemyTurret : MonoBehaviour
     private Transform player;
     private float nextFireTime = 0f;
 
-    void Start()
+    // Read-only state for TurretHealthBar, which polls it once a frame - the same arrangement as
+    // DroneControls.IsStunned / .HasCrashed. currentHealth stays private and TakeDamage() remains
+    // the only thing that changes it. See docs/decisions.md #13.
+    public int MaxHealth => maxHealth;
+    public int CurrentHealth => currentHealth;
+    public float HealthFraction => maxHealth > 0 ? Mathf.Clamp01((float)currentHealth / maxHealth) : 0f;
+
+    // Awake, not Start: TurretHealthBar reads HealthFraction in its own Start(), and Start() order
+    // between two components on the same object is undefined. Awake always runs first, so the bar
+    // can never come up empty on the first frame.
+    void Awake()
     {
         currentHealth = maxHealth;
+    }
 
+    void Start()
+    {
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj != null) player = playerObj.transform;
 

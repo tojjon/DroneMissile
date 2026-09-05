@@ -49,6 +49,13 @@ za jeden fyzikální krok je **menší než délka jeho collideru** — testovan
 překrývají a nevznikne mezera. Proto je pohyb v `FixedUpdate` (`speed × 0,02` = 0,6 m u rakety
 hráče vs. collider 0,986 m), ne v `Update()`, kde by ta vzdálenost závisela na frameratu.
 
+**A takhle to vypadá, když se ta podmínka poruší:** nepřátelská raketa má od
+[rozhodnutí #14](../decisions.md) `speed: 1080`, tedy **21,6 m za krok** proti collideru 0,986 m.
+Mezi dvěma testovanými pozicemi zůstane přes 20 m, kde nic neexistuje, takže raketa prolétá dronem
+i terénem a zásah se registruje jen když některý vzorek náhodou padne do cíle — zhruba v 6 %
+případů. Ve hře je to schválně, ale jako ukázka toho jevu je to učebnicové: **nic se nechytá za
+dráhu, chytá se za polohu v okamžiku kroku.** CCD tu nepomůže, na kinematickém tělese je no-op.
+
 ## Unity primitivy mají dlouhou osu Y, ale `LookRotation` zarovnává +Z
 
 Tohle byla příčina bugu #2 (vizuální polovina). **Opraveno** — viz

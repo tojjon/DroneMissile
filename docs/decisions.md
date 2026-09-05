@@ -324,3 +324,135 @@ textura se generuje jednou ve `Start()` podle poměru stran obrazovky; při změ
 se nepřegeneruje a rám na okrajích zesílí.
 
 **Kde:** [concept.md](concept.md), [../CLAUDE.md](../CLAUDE.md)
+
+---
+
+## #13 — Turret má health bar nad sebou, ve world space
+
+**Rozhodnutí:** Nad turretem visí pruh života. Nová komponenta `TurretHealthBar`
+(`Assets/scripts/TurretHealthBar.cs`) sedí na **stejném objektu jako `EnemyTurret`**, tedy na
+prázdném rootu `turret`. Canvas si staví sama v kódu jako `DroneHUD`, ale je **world space**, ne
+screen-space overlay:
+
+- Ve scéně **2,7 × 0,33 m, 4,8 m nad rootem** (default ve skriptu je 1,8 × 0,22 m / 3,2 m), tmavý
+  rám a barevná výplň.
+- **Billboard** — každý `LateUpdate` kopíruje rotaci kamery, takže pruh zůstává rovnoběžný
+  s plochou obrazovky.
+- Výplň se hýbe **anchory** (`anchorMax.x` v odsazeném childu `FillArea`), ne `Image.Type.Filled`.
+- Gradient je ve skriptu zelená → žlutá → červená; **scéna ho má přeladěný na červený** (`fullColor`
+  i `midColor` jsou čistá červená, `lowColor` tmavší), takže pruh nemění barvu, jen délku. Zobrazená
+  hodnota dojíždí na `drainSpeed` (1,5 pruhu/s).
+- Dál než `visibleRange` (90 m) se pruh vypne. Po přeladění v [rozhodnutí #14](decisions.md) je to
+  **hluboko pod** `detectionRange` (360 m) — turret začne střílet dávno předtím, než je jeho pruh
+  vidět.
+- `EnemyTurret` k tomu dostal read-only property `MaxHealth` / `CurrentHealth` / `HealthFraction`
+  a inicializace HP se přesunula ze `Start()` do `Awake()`.
+- Do scény komponentu přidává `Tools > DroneMissile > Build Turret Health Bars`
+  (`Assets/Editor/TurretHealthBarBuilder.cs`) — stejný postup jako `HudBuilder` a `TurretBodyBuilder`.
+
+**Proč:**
+
+- HP turretu z [rozhodnutí #5](decisions.md) byly doteď vidět **jen v konzoli** přes `Debug.Log`
+  v `TakeDamage()`. Pravidlo „víc zásahů, žádný one-shot kill" má pro hráče smysl teprve tehdy,
+  když je ten postup vidět — jinak neví, jestli zásah sedl, ani kolik ještě zbývá. Po
+  [rozhodnutí #14](decisions.md) je zásahů deset, takže pruh je tím spíš nutný.
+- **World space, ne HUD.** Pruh patří konkrétnímu turretu: musí ho zakrývat terén, musí se zmenšovat
+  s dálkou a při víc turretech musí sedět nad tím správným. Ve screen-space overlay by se každá
+  pozice musela promítat do obrazovky a zákryt terénem by se řešil zvlášť.
+- **Na rootu `turret`, ne na `Turret_Barrel`.** Hlaveň je aim transform a otáčí se
+  ([rozhodnutí #4](decisions.md), [#9](decisions.md)); pruh na ní by kroužil kolem hlavy.
+- **`Awake()` místo `Start()`** u `currentHealth`: pořadí `Start()` dvou komponent na jednom objektu
+  není definované, `Awake()` je vždycky dřív. Bez toho by pruh první frame ukázal prázdno.
+- **`LateUpdate`, ne `Update`.** Billboard musí přijít po všem, co v daném framu hýbe kamerou, jinak
+  pruh o frame zaostává za rotací dronu.
+- Bezspritový `Image` kreslí plný quad, takže na pruh nepotřebuje projekt žádnou texturu ani sprite —
+  na rozdíl od vignette v [rozhodnutí #12](decisions.md) tady nic negenerujeme.
+
+**Vylučuje:**
+
+- **HP nebo health bar pro dron. [Rozhodnutí #10](decisions.md) a [#12](decisions.md) platí dál.**
+  Tohle je pruh **turretu**, který HP má od #5. Není to otevření damage modelu dronu.
+- Čísla, procenta a damage numbers. Pruh a nic víc. `Debug.Log` v `TakeDamage()` zůstává, ale je pro
+  vývoj, ne pro hráče.
+- Text nad turretem (jméno, HP číslo) a s ním TextMeshPro. Stejný důvod jako u #12 — TMP Essential
+  Resources se do repa netahá.
+- Event bus nebo `UnityEvent` na damage. `TurretHealthBar` si stav **pollnuje** přes
+  `HealthFraction`, stejně jako `DroneHUD` pollnuje `IsStunned` / `HasCrashed`.
+- Zveřejnění `currentHealth` jako pole. Ven jdou jen read-only property; `TakeDamage()` zůstává
+  jediné místo, které HP mění.
+- Škálování na konstantní velikost na obrazovce. Pruh je world-space objekt a zmenšuje se s dálkou —
+  na hranici viditelnosti (90 m) je z těch 2,7 m asi 19 px na 1080p při FOV 80, což ještě stačí.
+  Konstantní velikost by znamenala buď pruh přes půl obrazovky z blízka, nebo clamp a další ladicí
+  konstantu.
+- `EventSystem`, `GraphicRaycaster` a `worldCamera` na canvasu. Pruh nebere input, `raycastTarget` je
+  všude vypnutý.
+
+**Cena:** Každý turret si drží vlastní world-space Canvas — vlastní draw call, a canvas se
+rebuilduje po celou dobu, kdy výplň dojíždí. Při jednom turretu je to šum, při desítkách by se to
+mělo změřit. `hideWhenUndamaged` je **vypnuté**, takže nedotčený turret je vidět z 90 m — jenže po
+[rozhodnutí #14](decisions.md) hráče sám vidí z 360 m, takže pruh jeho polohu neprozradí, naopak
+hráč schytá první rány dřív, než se má čeho chytit. Kdo to chce jinak, zvedne `visibleRange`.
+Rozměry jsou v metrech a předpokládají, že root `turret` má
+scale 1 (což má); pod naškálovaným parentem by se pruh zvětšil s ním.
+
+**Kde:** [design/enemies.md](design/enemies.md), [../CLAUDE.md](../CLAUDE.md)
+
+---
+
+## #14 — Přeladění boje: dálkový turret, hyperrychlá nepřátelská raketa
+
+**Rozhodnutí:** Boj je přeladěný na hodnoty, které vzešly z hraní, a **dokumentace se srovnává se
+scénou**, ne naopak. Platné hodnoty (Inspector overrides ve `SampleScene.unity`
+a v `enemy_rocket.prefab`) `[OVĚŘENO 05.09.2026]`:
+
+| Kde | Parametr | Bylo | Je |
+|---|---|---|---|
+| `EnemyTurret` (scéna) | `detectionRange` | 60 | **360** |
+| `EnemyTurret` (scéna) | `fireRate` | 0,1 s | **0,2 s** (5 ran/s) |
+| `EnemyTurret` (scéna) | `turnSpeed` | 90 °/s | **720 °/s** |
+| `EnemyTurret` (scéna) | `maxHealth` | 30 | **100** → 10 zásahů |
+| `EnemyProjectile` (prefab) | `speed` | 60 | **1080** |
+| `DroneControls` (scéna) | `stunImmunity` | 2 s | **0,5 s** |
+
+**Proč:** Je to ladění podle pocitu ze hry, ne odvození z modelu. Turret, který vidí přes celou
+mapu, otáčí se prakticky okamžitě a střílí bleskovou střelou, drží hráče pod tlakem po celý let
+místo krátkého okna kolem věže; deset zásahů místo tří dělá z likvidace turretu úkol na víc náletů,
+což je přesně to, co chtělo [rozhodnutí #5](decisions.md); a kratší i-frames (0,5 s) k tomu sedí,
+protože turret při `fireRate: 0.2` už nestřílí 10 ran za sekundu.
+
+**Vylučuje:**
+
+- **„Opravu" těchhle čísel zpátky na defaulty ve skriptech.** `EnemyTurret.cs` má pořád defaulty
+  30 / 2 s / 90 / 30 a `EnemyProjectile.cs` `speed = 20` — autoritativní je scéna a prefab. Nový
+  turret přetažený do scény tyhle hodnoty **nedostane**, musí se nastavit ručně.
+- Tabulky v [design/enemies.md](design/enemies.md) a [design/weapons.md](design/weapons.md) jako
+  zdroj pravdy o defaultech skriptu. Popisují scénu.
+- Technický dluh „`fireRate` ve scéně nesouhlasí s docs" z [backlog.md](backlog.md). Tímhle je
+  uzavřený — vyhrála scéna.
+
+**Cena — a je velká: `speed: 1080` prolomil strop z [rozhodnutí #8](decisions.md).**
+
+Detekce zásahu je diskrétní: projektil se každý fyzikální krok přesune o `speed × 0,02`. Při
+1080 m/s je to **21,6 m za krok**, zatímco collider projektilu je 0,986 m dlouhý a collider dronu
+má 0,387 m. Testované pozice se tedy nepřekrývají — mezi dvěma vzorky zůstane přes 20 m slepé
+mezery. Nepřátelská raketa proto dron **většinou mine i při přímém zásahu**: trefí jen tehdy, když
+některý vzorek náhodou padne do okna zhruba 1,4 m z každých 21,6 m, tedy **kolem 6 % letů**.
+Prolétává i terénem, a `lifeTime: 5` s jí při té rychlosti dává dolet 5,4 km.
+
+Je to **vědomá volba** — takhle se hra hraje dobře a stun je vzácný, spíš překvapení než trest.
+Ale je to *náhodná* vzácnost, ne navržená: nedá se ladit, hráč ji nemůže číst a zmizí, jakmile
+někdo sáhne na `Fixed Timestep` nebo na délku collideru. Kdyby se místo toho chtěl **spolehlivý**
+zásah, cesta není snížit `speed` naslepo, ale znovu otevřít #8 (sweep test / raycast po dráze mezi
+dvěma kroky místo diskrétního triggeru) — pak může být raketa rychlá i spolehlivá zároveň.
+
+Strop **~49 m/s dál platí pro raketu hráče** (`rocket.prefab`, `speed: 30`). Tam se na spolehlivé
+detekci stojí — je to jediný způsob, jak turret zabít.
+
+Vedlejší cena: `detectionRange: 360` pokrývá celou hratelnou plochu, takže „vyletět z dosahu" už
+prakticky neexistuje a otevřená otázka #6 v [design/enemies.md](design/enemies.md) (cooldown běžící
+mimo dosah) je tím z velké části bezpředmětná. A `visibleRange` pruhu života
+([rozhodnutí #13](decisions.md)) zůstal na 90 m, tedy čtvrtina dosahu turretu.
+
+**Kde:** [design/enemies.md](design/enemies.md), [design/weapons.md](design/weapons.md),
+[reference/unity-gotchas.md](reference/unity-gotchas.md), [backlog.md](backlog.md),
+[../CLAUDE.md](../CLAUDE.md)

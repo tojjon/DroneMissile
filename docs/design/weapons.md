@@ -9,7 +9,7 @@ se dá uhnout. Platí to i pro nepřátele, viz [enemies.md](enemies.md) a
 Důsledek pro design: zásah je vždy výsledek pozice a letu, nikdy hodu kostkou. Proto v projektu není
 a nemá být žádný raycast pro střelbu, přesnost v procentech ani rozptyl.
 
-## Raketa hráče `[OVĚŘENO 03.09.2026]`
+## Raketa hráče `[OVĚŘENO 05.09.2026]`
 
 | Parametr | Hodnota | Kde |
 |---|---|---|
@@ -19,18 +19,26 @@ a nemá být žádný raycast pro střelbu, přesnost v procentech ani rozptyl.
 | damage turretu | **10, hardcoded** | `RocketProjectile.OnTriggerEnter` |
 
 Raketa je **nevedená** — letí přímo ve směru, ve kterém byla vypuštěna (`transform.forward` z
-`FirePoint`). Turret má 30 HP a raketa dává 10 → **3 zásahy na zničení**.
+`FirePoint`). Turret má po [rozhodnutí #14](../decisions.md) **100 HP** a raketa dává 10 →
+**10 zásahů na zničení**.
 
-Poznámka k asymetrii: damage rakety hráče je zadrátovaný v místě volání, kdežto nepřátelský projektil
-má `damage` jako pole v Inspectoru. Není to záměr, jen to tak vzniklo.
+Poznámka k asymetrii: damage rakety hráče je zadrátovaný v místě volání. Protějšek
+`EnemyProjectile.damage` neexistuje — dron nemá HP a zásah místo poškození bere ovládání
+([rozhodnutí #10](../decisions.md)), takže je to jediná zadrátovaná hodnota poškození ve hře.
 
 ## Strop rychlosti projektilu
 
-`speed` nesmí přesáhnout **~49 m/s** (u obou stran). Není to designové rozhodnutí, je to technický
-limit detekce zásahu: ta je diskrétní a spolehlivá jen dokud je posun za fyzikální krok
-(`speed × 0,02` s) menší než délka collideru projektilu (0,986 m). Nad tím projektily začnou
-prolétávat cíli. Kdyby byla potřeba rychlejší raketa, je nutné znovu otevřít
-[rozhodnutí #8](../decisions.md), ne jen zvýšit číslo.
+`speed` nesmí přesáhnout **~49 m/s**. Není to designové rozhodnutí, je to technický limit detekce
+zásahu: ta je diskrétní a spolehlivá jen dokud je posun za fyzikální krok (`speed × 0,02` s) menší
+než délka collideru projektilu (0,986 m). Nad tím projektily začnou prolétávat cíli.
+
+**Platí to pro raketu hráče, ne pro nepřátelskou.** `rocket.prefab` má `speed: 30`, hluboko pod
+stropem — na spolehlivé detekci tady stojí jediný způsob, jak turret zabít. Nepřátelský
+`enemy_rocket.prefab` má od [rozhodnutí #14](../decisions.md) `speed: 1080` a strop tím **vědomě
+porušuje**: 21,6 m za krok znamená, že dron trefí zhruba v 6 % případů. Hraje se to tak dobře, ale
+je to náhodná vzácnost, ne navržená. Kdyby byla potřeba raketa rychlá **i spolehlivá**, je nutné
+znovu otevřít [rozhodnutí #8](../decisions.md) (sweep test po dráze mezi dvěma kroky), ne jen
+šroubovat číslem.
 
 ## Otevřené otázky `[OTEVŘENÉ]`
 

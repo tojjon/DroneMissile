@@ -346,6 +346,12 @@ MonoBehaviour:
   deathColor: {r: 1, g: 0.15, b: 0.15, a: 1}
   deathFontSize: 96
   deathFadeDuration: 0.25
+  crosshairColor: {r: 1, g: 1, b: 1, a: 0.85}
+  crosshairGap: 6
+  crosshairLength: 14
+  crosshairThickness: 2
+  crosshairOutline: 1
+  crosshairOutlineColor: {r: 0, g: 0, b: 0, a: 0.6}
 --- !u!4 &252681210
 Transform:
   m_ObjectHideFlags: 0
@@ -526,7 +532,7 @@ MonoBehaviour:
   armAltitude: 0.5
   killY: -70
   deathDelay: 1
-  stunImmunity: 2
+  stunImmunity: 0.5
 --- !u!114 &315145755
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1126,6 +1132,7 @@ GameObject:
   - component: {fileID: 791461481}
   - component: {fileID: 791461480}
   - component: {fileID: 791461483}
+  - component: {fileID: 791461484}
   m_Layer: 0
   m_Name: turret
   m_TagString: Untagged
@@ -1148,10 +1155,10 @@ MonoBehaviour:
   projectilePrefab: {fileID: 538261786542372936, guid: c8b2bad2146e2294ea19f0d935c48881, type: 3}
   barrel: {fileID: 1351777068}
   firePoint: {fileID: 1599587104}
-  detectionRange: 60
-  fireRate: 0.1
-  turnSpeed: 90
-  maxHealth: 30
+  detectionRange: 360
+  fireRate: 0.2
+  turnSpeed: 720
+  maxHealth: 100
 --- !u!4 &791461481
 Transform:
   m_ObjectHideFlags: 0
@@ -1192,6 +1199,29 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 5.2488365, y: 1.0893898, z: 5.176901}
   m_Center: {x: -0.012880325, y: 0.0446949, z: -0.003689766}
+--- !u!114 &791461484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 791461479}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b3c1d94e2f04a1d8c5a6e0f3b921d47, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TurretHealthBar
+  heightOffset: 4.8
+  width: 2.7
+  height: 0.33
+  padding: 0.03
+  visibleRange: 90
+  hideWhenUndamaged: 0
+  backgroundColor: {r: 0, g: 0, b: 0, a: 1}
+  fullColor: {r: 1, g: 0, b: 0, a: 1}
+  midColor: {r: 1, g: 0, b: 0, a: 1}
+  lowColor: {r: 0.9, g: 0.15, b: 0.15, a: 1}
+  drainSpeed: 1.5
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0

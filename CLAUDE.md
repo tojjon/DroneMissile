@@ -60,12 +60,12 @@ editor log to stdout; without it the log goes to `Logs/` (gitignored).
 
 ## Architecture
 
-Six `MonoBehaviour` scripts in `Assets/scripts/`, no assembly definitions — everything compiles into
-the default `Assembly-CSharp`. There is no manager, service locator, or event bus; components find
-each other at runtime through **Unity tags**, and are wired to prefabs/scene objects through
+Seven `MonoBehaviour` scripts in `Assets/scripts/`, no assembly definitions — everything compiles
+into the default `Assembly-CSharp`. There is no manager, service locator, or event bus; components
+find each other at runtime through **Unity tags**, and are wired to prefabs/scene objects through
 serialized public fields set in the Inspector. `Assets/Editor/` holds editor-only menu items that
-build scene objects (`Tools > DroneMissile > ...`) — that is how scene geometry and the HUD object
-get created here, since scene YAML is never hand-edited.
+build scene objects (`Tools > DroneMissile > ...`) — that is how scene geometry, the HUD object and
+the turret's health-bar component get into the scene here, since scene YAML is never hand-edited.
 
 **Tag contract** (breaking these silently disables gameplay — nothing throws):
 
@@ -88,8 +88,13 @@ get created here, since scene YAML is never hand-edited.
   instantiates `enemy_rocket.prefab` (`EnemyProjectile`) → on trigger calls
   `DroneControls.Stun(stunDuration)`. The drone has no health, so a hit takes control away instead
   of dealing damage — no thrust and no `MoveRotation` for a second, so it holds its attitude and
-  falls. `stunDuration` *is* a projectile field; the i-frames that stop a 10 shot/s turret from
-  pinning the drone (`stunImmunity`) live on `DroneControls`.
+  falls. `stunDuration` *is* a projectile field; the i-frames that stop a 5 shot/s turret from
+  pinning the drone (`stunImmunity`, 0.5 s in the scene) live on `DroneControls`.
+
+  **Scene values override every script default here, and by a lot** ([decision
+  #14](docs/decisions.md)): the scene turret runs `detectionRange: 360`, `fireRate: 0.2`,
+  `turnSpeed: 720`, `maxHealth: 100` (so ten player hits, not three), against script defaults of
+  30 / 2 / 90 / 30. Read the scene, not `EnemyTurret.cs`, when reasoning about how the game plays.
 
 Both spawners set the projectile's `owner` field to their own `transform` right after `Instantiate`.
 That is the self-hit filter — both projectiles spawn partly inside their shooter's collider, so a
@@ -124,8 +129,9 @@ Three guards in `DroneControls` look like cruft and are not — all three are
 - `killY` — a kill plane, deliberately **not** gated on that latch. The slab is a floating platform
   with terrain 57 m below; sliding off the edge is a fall the collision path can miss, and nothing
   in the project can restart a run.
-- `stunImmunity` — i-frames. At the scene's `fireRate: 0.1` a refreshing 1 s stun would leave the
-  drone limp until it hit the ground.
+- `stunImmunity` — i-frames, 0.5 s in the scene. At the scene's `fireRate: 0.2` a refreshing 1 s
+  stun would leave the drone limp until it hit the ground. (It was 2 s back when `fireRate` was
+  `0.1`; [decision #14](docs/decisions.md) halved the fire rate and cut the i-frames to match.)
 
 The drone also runs `ContinuousDynamic` CCD and `Interpolate`, set from code in `Start()`
 ([decision #11](docs/decisions.md)). Decision #8's "CCD is a no-op" applies to the *kinematic
@@ -134,7 +140,31 @@ the terrain heightfield above ~19.4 m/s, which one drop off the pad exceeds.
 
 Only `EnemyTurret` dies in the ordinary sense (`Destroy(gameObject)`). There is no win condition.
 
-**The HUD builds itself in code and polls.** `DroneHUD` is the only UI in the project. It finds the
+**The turret wears its health on a world-space bar.** `TurretHealthBar` sits on the *same* object as
+`EnemyTurret` — the empty `turret` root, which never rotates (a bar on `Turret_Barrel` would swing
+around the head) — and builds its own **`RenderMode.WorldSpace`** Canvas child named `HealthBar` in
+`Start()`: a dark `Background`, a padded `FillArea`, and a `Fill` whose `anchorMax.x` *is* the health
+fraction. World space, not the `DroneHUD` overlay, is [decision #13](docs/decisions.md): the bar
+belongs to one turret, so terrain must occlude it and it must shrink with distance. `sizeDelta` is
+therefore in **metres** and assumes the `turret` root's scale is 1. `LateUpdate` (not `Update` — the
+billboard has to come after anything that moved the camera this frame) polls
+`EnemyTurret.HealthFraction`, eases the fill toward it, tints it green→yellow→red (the *scene*
+overrides `fullColor` and `midColor` to plain red, so in play the bar only changes length), copies
+`Camera.main.transform.rotation` onto the bar, and deactivates it past `visibleRange` — 90 m, which
+since [decision #14](docs/decisions.md) is a quarter of the turret's 360 m `detectionRange`, so the
+turret opens fire long before its own bar appears. The scene also enlarges the bar to 2.7 × 0.33 m
+at `heightOffset: 4.8` (script defaults: 1.8 × 0.22 at 3.2). Like the HUD
+it reads read-only properties (`MaxHealth`/`CurrentHealth`/`HealthFraction`) and there is still no
+event bus. `EnemyTurret` sets `currentHealth` in **`Awake()`** for this: `Start()` order between two
+components on one object is undefined, so a `Start()` init would show an empty bar for a frame. The
+fill uses anchors rather than `Image.Type.Filled`, which would need a sprite — every graphic here is
+a spriteless quad.
+`Tools > DroneMissile > Build Turret Health Bars` (`Assets/Editor/TurretHealthBarBuilder.cs`) adds
+the component to every `EnemyTurret` in the open scene. The drone still has no health bar and no
+health — [decisions #10 and #12](docs/decisions.md) are unchanged.
+
+**The HUD builds itself in code and polls.** `DroneHUD` is the only screen-space UI in the project;
+the turret bar above is the only world-space one. It finds the
 drone by the `Player` tag in `Start()`, then constructs its whole hierarchy — Canvas (screen-space
 overlay), a full-screen `Image` for the stun vignette, four `Image` ticks for the crosshair, a `Text`
 for the death message — at runtime. Nothing UI-shaped exists in `SampleScene.unity` except the empty
@@ -177,7 +207,15 @@ shot. Don't move this back to `Start()`. Two further constraints hold this toget
 - Motion must stay in `FixedUpdate`, not `Update()`. Trigger tests are discrete, so hit detection
   relies on the per-step displacement being shorter than the projectile's own collider (0.986 m
   along Z). In `Update()` that distance scales with frame rate and the bug returns below ~30 fps.
-- `speed` must stay under **~49 m/s** for the same reason. Faster projectiles tunnel again.
+- `speed` must stay under **~49 m/s** for the same reason. Faster projectiles tunnel again. This
+  still holds for `rocket.prefab` (`speed: 30`) — reliable detection there is the only way to kill a
+  turret. It **no longer holds for `enemy_rocket.prefab`**, which [decision
+  #14](docs/decisions.md) took to `speed: 1080`: 21.6 m per physics step against a 0.986 m collider,
+  so an enemy rocket passes through the drone (and the terrain) unless a sample position happens to
+  land on it — roughly 6% of direct passes. That is deliberate, it is what makes the current tuning
+  fun, and it is logged in [docs/backlog.md](docs/backlog.md) so nobody "fixes" it as a regression.
+  Making enemy hits *reliably* rare needs a sweep test, not a smaller number — i.e. reopening
+  decision #8.
 
 **Drone flight** (`DroneControls`) is the one physics-driven component: `FixedUpdate` sums keyboard
 and transmitter input, then `rb.AddForce(transform.up * throttle)` plus `rb.MoveRotation`. Thrust is

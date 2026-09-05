@@ -70,20 +70,28 @@ smazaná, jakýkoli dotek pevného objektu restartuje scénu a nepřátelská ra
 
 ## Technický dluh
 
-### `fireRate` ve scéně nesouhlasí s docs
+### ~~`fireRate` ve scéně nesouhlasí s docs~~ — vyřešeno
 
-Scéna má na turretu **`fireRate: 0.1`** (10 výstřelů za sekundu), `[OVĚŘENO]` tabulka
-v [design/enemies.md](design/enemies.md) uvádí **2 s**, což je i default v `EnemyTurret.cs`.
-Pravděpodobně zbytek po testování.
+**Stav:** uzavřeno `[05.09.2026]`, viz [rozhodnutí #14](decisions.md).
 
-Doteď to nebylo poznat, protože turret stejně nemohl zasáhnout (bug #2). Po jeho opravě je to jedno
-pole v Inspectoru — vyzkoušet, jestli je 10 výstřelů/s hratelné, a srovnat scénu s docs (nebo docs
-se scénou, pokud se to ukáže jako lepší hra). `[OTEVŘENÉ]`
+Scéna měla `fireRate: 0.1` proti 2 s v docs. Vyhrála **scéna**: po hraní je to `0.2` (5 ran/s)
+a dokumentace se srovnala s ní, ne naopak. `stunImmunity` klesla z 2 s na 0,5 s, protože i-frames
+už nemusí krýt 10 zásahů za sekundu.
 
-`[AKTUALIZOVÁNO 04.09.2026]` Tohle číslo teď přímo určuje hratelnost stunu: 10 zásahů za sekundu
-proti 1s stunu by dron drželo bez ovládání až do dopadu. Řeší to `stunImmunity` (i-frames)
-v `DroneControls`, viz [rozhodnutí #10](decisions.md) — ale ta hodnota je obezlička kolem
-`fireRate: 0.1`. Když se `fireRate` srovná s docs (2 s), i-frames se dají snížit nebo zrušit.
+Zůstává v platnosti obecná past: defaulty v `EnemyTurret.cs` (30 / 2 s / 90 / 30) **nejsou** to, co
+se hraje. Nový turret přetažený do scény se musí nastavit ručně.
+
+### Nepřátelská raketa prolétává cílem (vědomě)
+
+**Stav:** aktivní, **není to bug k opravě** `[OVĚŘENO 05.09.2026]`.
+
+`enemy_rocket.prefab` má `speed: 1080` → 21,6 m za fyzikální krok proti collideru 0,986 m. Zásah se
+proto registruje jen náhodou, zhruba v 6 % přímých letů. Je to vědomá cena za pocit ze hry
+([rozhodnutí #14](decisions.md)), zapsaná sem, aby ji příště někdo neopravoval jako regresi.
+
+Co by to změnilo na navrženou vzácnost místo náhodné: sweep test (`Physics.SphereCast` po dráze mezi
+dvěma kroky) místo diskrétního `OnTriggerEnter`, plus zpátky nižší `speed`, kdyby se ukázalo, že
+spolehlivý zásah je moc. Obojí znamená znovu otevřít [rozhodnutí #8](decisions.md). `[OTEVŘENÉ]`
 
 ### Damage rakety hráče je hardcoded
 
