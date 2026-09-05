@@ -60,12 +60,13 @@ editor log to stdout; without it the log goes to `Logs/` (gitignored).
 
 ## Architecture
 
-Seven `MonoBehaviour` scripts in `Assets/scripts/`, no assembly definitions — everything compiles
-into the default `Assembly-CSharp`. There is no manager, service locator, or event bus; components
-find each other at runtime through **Unity tags**, and are wired to prefabs/scene objects through
-serialized public fields set in the Inspector. `Assets/Editor/` holds editor-only menu items that
-build scene objects (`Tools > DroneMissile > ...`) — that is how scene geometry, the HUD object and
-the turret's health-bar component get into the scene here, since scene YAML is never hand-edited.
+Nine `MonoBehaviour` scripts plus one static helper (`FxAssets`) in `Assets/scripts/`, no assembly
+definitions — everything compiles into the default `Assembly-CSharp`. There is no manager, service
+locator, or event bus; components find each other at runtime through **Unity tags**, and are wired
+to prefabs/scene objects through serialized public fields set in the Inspector. `Assets/Editor/`
+holds editor-only menu items that build scene objects (`Tools > DroneMissile > ...`) — that is how
+scene geometry, the HUD object, the turret's health-bar component and the drone's stun-arc component
+get into the scene here, since scene YAML is never hand-edited.
 
 **Tag contract** (breaking these silently disables gameplay — nothing throws):
 
@@ -81,7 +82,8 @@ the turret's health-bar component get into the scene here, since scene YAML is n
 
 **Combat flow.** Both directions are symmetric but do *not* share code:
 
-- Player: `Shoting` instantiates `rocket.prefab` (`RocketProjectile`) → on trigger walks
+- Player: `Shoting` instantiates `rocket.prefab` (`RocketProjectile`) → a **raycast sweep** in
+  `FixedUpdate` (not the trigger — see the projectile section) walks
   `GetComponentInParent<EnemyTurret>()` and calls `TakeDamage(10)` — damage is hardcoded at the
   call site, not a field on the projectile.
 - Enemy: `EnemyTurret` tracks the player within `detectionRange`, rotates `barrel` toward it, and
@@ -139,6 +141,85 @@ projectiles* — the drone is dynamic, and with `Discrete` its 0.387 m collider 
 the terrain heightfield above ~19.4 m/s, which one drop off the pad exceeds.
 
 Only `EnemyTurret` dies in the ordinary sense (`Destroy(gameObject)`). There is no win condition.
+
+**Effects are built in code too, and none of them is an asset.** There is no ParticleSystem, shader,
+`.mat` or `.png` for VFX anywhere in `Assets/` and VFX Graph is deliberately not installed — all
+[decision #16](docs/decisions.md). `FxAssets` is a static class holding the only two materials and
+two textures any effect uses, built lazily on first access and shared: a per-hit `Material` would
+leak, since runtime-created Objects are not garbage collected. Two things there are load-bearing:
+
+- A code-created `ParticleSystemRenderer` arrives with the **builtin** default particle material,
+  which is **magenta under URP**. Every renderer must be handed `FxAssets.AdditiveDot`/`AdditiveBand`
+  explicitly, and via `sharedMaterial` — `material` instantiates a private copy per renderer.
+- Additive blending is **not** a keyword. `ParticlesUnlit.shader` reads
+  `Blend[_SrcBlend][_DstBlend] ZWrite[_ZWrite]` off the material, and URP sets those floats from an
+  *editor-only* ShaderGUI that does not exist at runtime. `FxAssets.BuildAdditive()` is that method
+  transcribed by hand. `Shader.Find` also returns `null` in a **player build** until the shader is
+  added to Project Settings > Graphics > Always Included Shaders — logged in
+  [docs/backlog.md](docs/backlog.md), and it warns and falls back rather than going magenta.
+
+**HDR colour cannot go through the particle system.** `main.startColor` and
+`LineRenderer.startColor` are written into the vertex stream as `Color32`, so anything above 1 is
+clamped on its way to the GPU and can never cross Bloom's threshold of 1 — the effect renders as a
+dull smudge instead of a glow, with nothing in the console to say why. Every effect here therefore
+sets `startColor = Color.white` and puts the HDR tint on `_BaseColor` through
+`FxAssets.Tint(renderer, hdrColor)`, a `MaterialPropertyBlock` (no allocation, nothing to destroy,
+and with no index it covers a `ParticleSystemRenderer`'s separate trail material too).
+
+`RocketProjectile.HandleHit` spawns an `ImpactExplosion` on **every** impact — terrain, slab,
+turret — before the `TakeDamage` call, so a turret that dies to the hit cannot cost the effect. It
+builds in `Start()`, not `Awake()`: `AddComponent` runs `Awake` synchronously *inside the call*, so
+the spawner's field assignments on the next line would be missed. (`RocketProjectile.Awake` carries
+the opposite note for the opposite reason.) Position and orientation come from the sweep's
+`hit.point`/`hit.normal`, so the spark cone fires off the real surface. Never use
+`other.ClosestPoint()` here — it is undefined for `TerrainCollider` and non-convex meshes and hands
+back the collider's transform origin, i.e. an explosion hundreds of metres away.
+
+Particles are emitted with an explicit `ps.Play(); ps.Emit(n);`, **not** a burst at `t = 0`. A burst
+depends on the system clock still being at zero when the first simulation step runs, and it is not —
+`AddComponent<ParticleSystem>()` starts the system playing before any configuration lands.
+
+**`DroneStunArcs` is one `ParticleSystem`, simulated in world space, and it is not a child of the
+drone.** All three are deliberate ([decisions #16 and #17](docs/decisions.md)):
+
+- **`simulationSpace = World` is the effect**, not an optimisation. Particles are left behind as the
+  drone flies, so they stream past the lens and *parallax*. That parallax is the whole difference
+  between an effect that lives in the world and one that reads as a HUD overlay — which is exactly
+  how the `LineRenderer` version this replaced looked, being screen-aligned and camera-locked.
+- The arcs are **noise + trails**, not geometry. A strong high-frequency `noise` module throws each
+  particle along an erratic zig-zag and the `trails` module draws the visible filament behind it.
+  That is the particle idiom for lightning; hand-built jagged polylines were the wrong tool.
+- The rig is an **unparented root object at scale 1** whose pose is copied from the drone in
+  `LateUpdate`, because the `Drone` root's scale is `(0.61325, 0.38720787, 1)` and a child would
+  inherit that squash — the same trap as [decision #4](docs/decisions.md); particle `startSize` is
+  driven by lossy scale. (`TurretHealthBar` *can* be a child; the turret root's scale is 1.)
+- Emission is a **hollow shell** (`fieldCenter`/`fieldRadius`/`fieldThickness`) sized so its nearest
+  particles clear the camera's 0.3 m near clip. `Main Camera` sits at drone-local `(0, 0.12, 0.629)`
+  while the body is a 1 m cube at the origin, so the camera is 0.129 m *in front of the nose* and
+  the whole hull is behind the camera plane — anything drawn on the body is invisible in first
+  person. `OnDrawGizmosSelected` draws both shell radii.
+
+It polls `DroneControls.IsStunned` like the HUD, which is what makes i-frame-rejected hits show
+nothing. Fade-out needs no code: emission stops and the particles in flight finish their own lives.
+
+`ParticleSystem` modules are **struct handles**: `ps.main.startColor = c` is CS1612. Copy the module
+into a local (`var main = ps.main;`) — the copy still points at the same native system.
+
+**`AddComponent<ParticleSystem>()` returns a system that is already playing** (`playOnAwake` defaults
+on), so both builders call `ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear)` on the
+very next line, before touching any module. Skipping it costs an audible error — `main.duration` is
+rejected while playing — *and* a silent one: the clock is already past 0, so a burst scheduled at
+`t = 0` never fires and the trailing `ps.Play()` is a no-op on an already-playing system. The effect
+then builds without further complaint and renders nothing.
+
+`ps.Play()` also does nothing on an inactive GameObject, and `playOnAwake` fires only on the first
+`Awake`, not on every re-enable — so `DroneStunArcs` deactivates its rig last and starts the sparks
+with an explicit `Play()` in `LateUpdate` when the rig comes back, or every stun after the first
+would have no sparks.
+
+`Tools > DroneMissile > Build Drone Stun Arcs` (`Assets/Editor/DroneStunArcsBuilder.cs`) puts the
+component on the `Player`-tagged root. The explosion needs no builder — the call site is already in
+`RocketProjectile`.
 
 **The turret wears its health on a world-space bar.** `TurretHealthBar` sits on the *same* object as
 `EnemyTurret` — the empty `turret` root, which never rotates (a bar on `Turret_Barrel` would swing
@@ -207,15 +288,20 @@ shot. Don't move this back to `Start()`. Two further constraints hold this toget
 - Motion must stay in `FixedUpdate`, not `Update()`. Trigger tests are discrete, so hit detection
   relies on the per-step displacement being shorter than the projectile's own collider (0.986 m
   along Z). In `Update()` that distance scales with frame rate and the bug returns below ~30 fps.
-- `speed` must stay under **~49 m/s** for the same reason. Faster projectiles tunnel again. This
-  still holds for `rocket.prefab` (`speed: 30`) — reliable detection there is the only way to kill a
-  turret. It **no longer holds for `enemy_rocket.prefab`**, which [decision
-  #14](docs/decisions.md) took to `speed: 1080`: 21.6 m per physics step against a 0.986 m collider,
-  so an enemy rocket passes through the drone (and the terrain) unless a sample position happens to
-  land on it — roughly 6% of direct passes. That is deliberate, it is what makes the current tuning
-  fun, and it is logged in [docs/backlog.md](docs/backlog.md) so nobody "fixes" it as a regression.
-  Making enemy hits *reliably* rare needs a sweep test, not a smaller number — i.e. reopening
-  decision #8.
+- `speed` must stay under **~49 m/s** for the same reason — *for anything still relying on the
+  trigger.* Both prefabs now break that ceiling and they resolve it differently:
+  - **`rocket.prefab` (`speed: 120`, not the 30 this file claimed until
+    [decision #17](docs/decisions.md))** would tunnel through ~59% of its hits — 2.4 m per step
+    against a 0.986 m collider. It no longer uses the trigger as its hit path: `FixedUpdate`
+    **raycasts the segment it is about to cross** and detonates at `hit.point`. Detection is exact
+    at any speed, and the sweep hands back a real surface normal for the impact effect. The trigger
+    survives only as a fallback for something moving *into* the rocket, behind a `consumed` guard so
+    the two paths cannot both fire.
+  - **`enemy_rocket.prefab` (`speed: 1080`)** keeps tunnelling on purpose: 21.6 m per step, so it
+    passes through the drone and the terrain unless a sample lands on it — roughly 6% of direct
+    passes. That is [decision #14](docs/decisions.md), it is what makes the current tuning fun, and
+    it is logged in [docs/backlog.md](docs/backlog.md) so nobody "fixes" it as a regression. Give it
+    the same sweep only if reliable enemy hits are ever wanted.
 
 **Drone flight** (`DroneControls`) is the one physics-driven component: `FixedUpdate` sums keyboard
 and transmitter input, then `rb.AddForce(transform.up * throttle)` plus `rb.MoveRotation`. Thrust is

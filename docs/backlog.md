@@ -58,13 +58,15 @@ při smrti hráče, nešlo komponentu jen tak přidat. Odpověď: **dron nemá H
 smazaná, jakýkoli dotek pevného objektu restartuje scénu a nepřátelská raketa místo damage bere na
 `stunDuration` sekund ovládání.
 
-### 4. Turret vystřelí okamžitě při návratu hráče do dosahu
+### ~~4. Turret vystřelí okamžitě při návratu hráče do dosahu~~
 
-**Stav:** aktivní, drobnost `[OVĚŘENO 03.09.2026]`.
+**Stav: NENÍ BUG — ZÁMĚR** `[ROZHODNUTO 05.09.2026]`, viz [rozhodnutí #15](decisions.md).
 
-`EnemyTurret.Update()` se při hráči mimo `detectionRange` ukončí dřív, než dojde na kontrolu
-`nextFireTime` — cooldown ale běží dál na reálném čase. Hráč, který odletí a vrátí se po víc než
-`fireRate` sekundách, dostane výstřel okamžitě, bez náběhu.
+Popis platí a kód se nemění: `EnemyTurret.Update()` se při hráči mimo `detectionRange` ukončí dřív,
+než dojde na kontrolu `nextFireTime`, cooldown ale běží dál na reálném čase — návrat do dosahu po
+víc než `fireRate` sekundách znamená ránu okamžitě, bez náběhu. Po hraní je to **žádoucí**: návrat
+do dosahu je hráčovo rozhodnutí a má mít cenu. Reset `nextFireTime` při ztrátě cíle i jakékoli
+telegrafování první rány jsou tím vyloučené.
 
 ---
 
@@ -92,6 +94,41 @@ proto registruje jen náhodou, zhruba v 6 % přímých letů. Je to vědomá cen
 Co by to změnilo na navrženou vzácnost místo náhodné: sweep test (`Physics.SphereCast` po dráze mezi
 dvěma kroky) místo diskrétního `OnTriggerEnter`, plus zpátky nižší `speed`, kdyby se ukázalo, že
 spolehlivý zásah je moc. Obojí znamená znovu otevřít [rozhodnutí #8](decisions.md). `[OTEVŘENÉ]`
+
+### URP particle shader není v Always Included Shaders
+
+`FxAssets` shání materiál efektů přes
+`Shader.Find("Universal Render Pipeline/Particles/Unlit")`. `Shader.Find` ale vidí jen shadery, na
+které se v buildu někdo odkazuje, a v tomhle projektu se neodkazuje nikdo —
+`ProjectSettings/GraphicsSettings.asset` má v `m_AlwaysIncludedShaders` jen 7 builtin shaderů.
+
+V editoru to funguje vždycky. **V player buildu vrátí `null`**, `FxAssets` zaloguje warning a
+spadne zpět na `Sprites/Default` — efekty se vykreslí, ale nebudou aditivní.
+
+Až se bude poprvé dělat build: *Edit > Project Settings > Graphics > Shader Loading > Always
+Included Shaders*, přidat `Universal Render Pipeline/Particles/Unlit`. Přes UI, ne ruční editací
+YAML. Viz [rozhodnutí #16](decisions.md). `[OTEVŘENÉ]`
+
+### Slupka výbojů je naladěná na současnou kameru
+
+`DroneStunArcs` emituje v kulové slupce `fieldCenter (0, 0, 0.3)` / `fieldRadius 1.8` /
+`fieldThickness 0.45`. Je to naladěné tak, aby nejbližší částice minuly near clip 0,3 m kamery, která
+sedí na drone-local `(0, 0.12, 0.629)` — trup je celý za její rovinou, takže výboje na něm by nebylo
+vidět ([rozhodnutí #16](decisions.md) a [#17](decisions.md)).
+
+**Jakmile se kamera hne** — nebo přibude chase pohled — je potřeba slupku přeladit. U chase kamery ji
+lze zmenšit a posadit na trup. Obě gizma (vnější i vnitřní poloměr) se kreslí při vybraném dronu ve
+Scene view. `[OTEVŘENÉ]`
+
+### Dokumentace tvrdila `speed: 30`, prefab má 120 `[VYŘEŠENO 05.09.2026]`
+
+`rocket.prefab` má `speed: 120`, ale `CLAUDE.md` i [design/weapons.md](design/weapons.md) roky
+tvrdily 30 a odvozovaly z toho, že raketa hráče je „hluboko pod stropem ~49". Nebyla — prolétala
+zhruba 59 % zásahů. Opraveno v obou dokumentech, detekce převedena na sweep test
+([rozhodnutí #17](decisions.md)).
+
+Poučení, ne úkol: **prefab je autoritativní, dokumentace ne** ([rozhodnutí #14](decisions.md)). Když
+se v docs objeví konkrétní číslo z prefabu nebo scény, patří k němu ověření, ne důvěra.
 
 ### Damage rakety hráče je hardcoded
 

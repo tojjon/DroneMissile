@@ -110,3 +110,105 @@ se `other.transform.IsChildOf(owner)`, což pokryje celou hierarchii včetně ne
 Crash-recovery snapshot od Unity, který se omylem dostal do initial commitu. Není součástí buildu
 a **není to pracovní scéna** — pracovní je `Assets/Scenes/SampleScene.unity`. Kdo ji omylem otevře,
 edituje slepou kopii.
+
+## Vestavěný particle materiál je pod URP magenta
+
+**Projev:** `ParticleSystem` vyrobený v kódu se vykreslí jako magenta čtverce.
+
+**Příčina:** `AddComponent<ParticleSystem>()` si přes `[RequireComponent]` přitáhne
+`ParticleSystemRenderer` a ten přijde s **builtin** default particle materiálem. Ten je psaný pro
+built-in pipeline a pod URP se nepřeloží → magenta.
+
+**Řešení:** vždycky renderu přiřadit materiál explicitně —
+`r.sharedMaterial = FxAssets.AdditiveDot`. A `sharedMaterial`, ne `material`: `material` si při
+prvním přístupu udělá privátní kopii pro každý renderer, což je u efektu na zásah leak materiálu na
+každou ránu.
+
+**Návazná past:** aditivní míchání se v URP nezapíná keywordem. `ParticlesUnlit.shader` čte
+`Blend[_SrcBlend][_DstBlend] ZWrite[_ZWrite]` z materiálu a nastavuje to **editor-only** ShaderGUI
+(`BaseShaderGUI.SetupMaterialBlendMode`), který za běhu neexistuje. Za běhu se ty floaty musí
+nastavit ručně — viz `FxAssets.BuildAdditive()` a [rozhodnutí #16](../decisions.md).
+
+**A ještě jedna:** `Shader.Find()` vidí jen shadery, na které se v buildu někdo odkazuje. V editoru
+projde vždycky, v player buildu vrátí `null`, dokud shader není v *Project Settings > Graphics >
+Always Included Shaders*.
+
+## Moduly `ParticleSystem` jsou struct handles — `ps.main.x = y` se nepřeloží
+
+**Projev:** `ps.main.startColor = Color.red;` skončí chybou **CS1612** („Cannot modify the return
+value ... because it is not a variable").
+
+**Příčina:** `MainModule`, `EmissionModule`, `ShapeModule` a spol. jsou `struct`y. Property `ps.main`
+vrací **kopii**, a zápis do kopie by se zahodil — kompilátor to proto rovnou zakáže.
+
+**Řešení:** modul si zkopírovat do lokální proměnné a psát přes ni:
+
+```csharp
+var main = ps.main;
+main.startColor = Color.red;
+```
+
+Není to obcházení kompilátoru. Ten struct **obaluje pointer** na nativní systém, takže kopie ukazuje
+na tentýž `ParticleSystem` a zápis se propíše. Stejně tak `var emission = ps.emission;` atd.
+
+**Vedlejší past:** `new ParticleSystem.Burst(0f, 1)` je nejednoznačné — `int` se umí implicitně
+převést jak na `short`, tak (přes `float`) na `MinMaxCurve`. Psát `(short)1`.
+
+**A ještě:** `ps.Play()` na už deaktivovaném GameObjectu nic neudělá, a `playOnAwake` se spustí jen
+při **prvním** `Awake`, ne při každém znovuzapnutí. `DroneStunArcs` proto svůj rig vypíná až **po**
+dostavění a jiskry rozjíždí explicitním `Play()` v `LateUpdate` ve chvíli, kdy rig zapíná — jinak by
+sparks po prvním stunu zůstaly mrtvé.
+
+## `AddComponent<ParticleSystem>()` systém rovnou rozjede
+
+**Projev:** dvě chyby v konzoli — *„Setting the duration while system is still playing is not
+supported"* — a hlavně **žádný efekt vidět nebylo**. `[OVĚŘENO 05.09.2026]`
+
+**Příčina:** systém přidaný přes `AddComponent` přijde s `playOnAwake` **už zapnutým**, takže hraje
+ještě dřív, než se stihne nakonfigurovat. Z toho plyne dvojí:
+
+1. `main.duration` jde nastavit jen na zastaveném systému → hlášená chyba.
+2. Tiše horší: hodiny systému už přetekly nulu, takže **burst naplánovaný na `t = 0` nikdy
+   nevystřelí**, a `ps.Play()` na konci je no-op, protože systém *už* hraje. Výsledek je efekt, který
+   se postaví, nezaloguje nic dalšího a nic nevykreslí.
+
+**Řešení:** hned po `AddComponent` systém zastavit a vyčistit, teprve pak sahat na moduly:
+
+```csharp
+ParticleSystem ps = go.AddComponent<ParticleSystem>();
+ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+```
+
+`StopEmittingAndClear` resetuje hodiny, takže následný `Play()` burst skutečně odpálí. Je to přesně
+to, co radí i ta chybová hláška — jen z ní není poznat, že to druhé, tiché selhání s ní souvisí.
+
+## HDR barva v `startColor` se ořízne na 0–1
+
+**Projev:** efekt se vykreslí, ale **nezáří** — je to matná šmouha, přestože Bloom je zapnutý a
+barva má v Inspectoru složku klidně 5 nebo 8. Nic se nezaloguje. `[OVĚŘENO 05.09.2026]`
+
+**Příčina:** `ParticleSystem` zapisuje barvu částice do **vertex streamu jako `Color32`**, tedy
+8 bitů na kanál. `main.startColor = (5, 0.6, 0.15)` dorazí na GPU jako `(1, 0.6, 0.15)`. Bloom v
+`SampleSceneProfile` má threshold **1**, takže oříznutá barva ho z principu nikdy nepřekročí.
+
+Týká se to stejně:
+
+- `ParticleSystem.MainModule.startColor`
+- `colorOverLifetime` / `colorOverTrail` gradientů (`Gradient` je taky 8bitový)
+- **`LineRenderer.startColor` / `endColor`** — a `TrailRenderer` taky
+
+**Řešení:** HDR patří na **materiál**, ne na částici. `_BaseColor` v URP je skutečný `float4`
+uniform a přežije:
+
+```csharp
+MaterialPropertyBlock mpb = new MaterialPropertyBlock();
+mpb.SetColor("_BaseColor", new Color(8f, 1f, 0.25f, 1f));   // HDR projde
+r.SetPropertyBlock(mpb);                                     // bez indexu = i trail materiál
+```
+
+Vertex barva pak slouží jen jako maska 0–1: `startColor = Color.white` a gradienty řídí **jenom
+alfu**. To je zároveň to, co chceme — u aditivního míchání je alfa `SrcAlpha` faktor, takže částice
+při zániku plynule vypadne z bloom thresholdu, místo aby nejdřív zšedla.
+
+`MaterialPropertyBlock` je proti vyrobení materiálu na efekt lepší: nealokuje, není co uklízet, a
+bez indexu pokryje všechny sub-materiály rendereru — u `ParticleSystemRenderer` včetně `trailMaterial`.

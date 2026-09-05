@@ -41,6 +41,20 @@ Zásah nedává poškození — dron **nemá HP** a místo toho na `stunDuration
 přímých zásahů. Je to vědomá cena za pocit ze hry, ne bug — celý rozbor je v
 [rozhodnutí #14](../decisions.md).
 
+**Stun je vidět dvakrát.** Kromě červeného rámu HUD ([rozhodnutí #12](../decisions.md)) běží po dobu
+stunu i **elektrické výboje** kolem dronu (`DroneStunArcs`) — modrobílé částice s trails, které
+noise modul rozhazuje do klikaté dráhy. Rám říká **stav**, částice říkají **příčinu**.
+
+Obojí čte tutéž `DroneControls.IsStunned`, takže zásah odmítnutý i-frames neukáže **nic** — ani rám,
+ani výboje.
+
+Částice se simulují ve **world space**, takže při letu zůstávají za dronem a proplouvají kolem
+objektivu s paralaxou. To je schválně a je to celý rozdíl mezi efektem ve světě a překryvem přes
+obrazovku — původní `LineRenderer` verze byla zarovnaná na obrazovku a četla se jako HUD. Emituje se
+v kulové slupce kolem dronu, ne na trupu: kamera sedí 0,129 m **před** špičkou, takže trup je celý za
+její rovinou a nic na něm není v first person vidět. Viz [rozhodnutí #17](../decisions.md) a
+[#16](../decisions.md).
+
 Turret je zatím jediný ve scéně a je jediná věc ve hře, která **umí zemřít** (`Destroy(gameObject)`).
 
 ## Zobrazení HP `[OVĚŘENO 05.09.2026]`
@@ -106,11 +120,12 @@ nečte žádný kód.
 4. **Chování po zásahu.** Zásah je od [rozhodnutí #13](../decisions.md) vidět na pruhu života, ale
    samotná likvidace pořád proběhne **bez efektu** — turret jen zmizí. Výbuch, trosky, oheň?
 5. **Kolik turretů a jak rozmístěné?** Souvisí s otázkou úrovní v [concept.md](../concept.md).
-6. **Má turret přestat střílet, když hráč zmizí z dosahu?** Teď při ztrátě dosahu jen přestane
-   `Update` — ale cooldown běží dál, takže první výstřel po návratu do dosahu přijde okamžitě.
-   `[AKTUALIZOVÁNO 05.09.2026]` Po [rozhodnutí #14](../decisions.md) je `detectionRange` 360 m, což
-   pokrývá celou hratelnou plochu — z dosahu se prakticky nedá vyletět, takže otázka je zatím
-   akademická. Vrátí se, až budou turretů desítky nebo bude mapa větší.
+6. ~~**Má turret přestat střílet, když hráč zmizí z dosahu?**~~ **ZODPOVĚZENO 05.09.2026** —
+   [rozhodnutí #15](../decisions.md). Cooldown běží dál na reálném čase a první rána po návratu do
+   dosahu přijde **okamžitě, bez náběhu**. Je to záměr, ne opomenutí: návrat do dosahu má mít cenu.
+   Dnes je to skoro neviditelné (`detectionRange` 360 m pokrývá celou plochu), naostro se to projeví
+   až se ztráta cíle stane běžnou — hlavně v kombinaci s otázkou #2 výš, kde by vyklonění zpoza
+   kopce znamenalo ránu v tomtéž okamžiku.
 7. **Je 6% šance na zásah to, co chceme?** Nepřátelská raketa při `speed: 1080` prolétává cílem
    ([rozhodnutí #14](../decisions.md)). Teď se to hraje dobře, ale ta vzácnost je náhoda, ne design —
    spolehlivá varianta znamená sweep test místo diskrétního triggeru, tedy znovuotevřít

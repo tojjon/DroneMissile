@@ -456,3 +456,157 @@ mimo dosah) je tím z velké části bezpředmětná. A `visibleRange` pruhu ži
 **Kde:** [design/enemies.md](design/enemies.md), [design/weapons.md](design/weapons.md),
 [reference/unity-gotchas.md](reference/unity-gotchas.md), [backlog.md](backlog.md),
 [../CLAUDE.md](../CLAUDE.md)
+
+---
+
+## #15 — Turret střílí okamžitě po návratu hráče do dosahu (záměr)
+
+**Rozhodnutí:** Cooldown turretu běží na reálném čase i ve chvíli, kdy je hráč mimo
+`detectionRange`. Hráč, který odletí a vrátí se po víc než `fireRate` sekundách, dostane výstřel
+**okamžitě, bez náběhu** — a tak to má být. `[ROZHODNUTO 05.09.2026]`
+
+**Proč:** Ověřeno hraním, stejně jako [rozhodnutí #14](decisions.md) — takhle se to hraje dobře.
+Návrat do dosahu je hráčovo rozhodnutí, a okamžitá odpověď z něj dělá rozhodnutí s cenou. Náběh po
+návratu by z každého vyklonění udělal bezpečné okno, což je přesně opačný pocit, než jaký turret má
+mít.
+
+Kód se tím **nemění.** `EnemyTurret.Update()` se při hráči mimo dosah ukončí před kontrolou
+`nextFireTime` a `nextFireTime` se nikde neresetuje — to chování je od teď specifikace, ne shoda
+okolností.
+
+**Vylučuje:**
+
+- Reset nebo clamp `nextFireTime` při ztrátě cíle (`nextFireTime = Time.time + fireRate` v místě
+  toho `return`) — to je ta „oprava", které se tímhle zavírají dveře.
+- „Náběh" / telegrafování prvního výstřelu po zaměření: prodleva na akvizici cíle, zvuk nebo
+  animace před první ranou.
+- Položku „4. Turret vystřelí okamžitě při návratu hráče do dosahu" v [backlog.md](backlog.md) jako
+  bug. Zavřená.
+- Otevřenou otázku #6 v [design/enemies.md](design/enemies.md) („Má turret přestat střílet, když
+  hráč zmizí z dosahu?"). Zodpovězená: cooldown běží dál.
+
+**Souvislost, na kterou si dát pozor:** dnes je to skoro neviditelné, protože `detectionRange` je po
+[rozhodnutí #14](decisions.md) 360 m a pokrývá celou hratelnou plochu — z dosahu se prakticky nedá
+vyletět. **Naostro se to projeví, až bude ztráta cíle běžná**, a hlavně kdyby se přidal line-of-sight
+(otázka #2 v [design/enemies.md](design/enemies.md)): pak by každé vyklonění zpoza kopce znamenalo
+ránu v tomtéž okamžiku a terén jako kryt by byl výrazně tvrdší, než jak ten nápad zní. Tohle
+rozhodnutí říká, že to je žádoucí — ne že se na to zapomnělo.
+
+**Kde:** [design/enemies.md](design/enemies.md), [backlog.md](backlog.md)
+
+---
+
+## #16 — VFX se staví v kódu; oblouky nejsou na trupu, ale před kamerou
+
+**Rozhodnutí:** Zásah rakety hráče dělá krátký červený výbuch, stun dronu doprovázejí elektrické
+oblouky. Obojí se staví **v C# za běhu** — žádný prefab, žádná `.mat`, žádná `.png`, žádný VFX
+Graph. Materiál vzniká přes `Shader.Find("Universal Render Pipeline/Particles/Unlit")` a blend state
+se nastavuje ručně. Oblouky se kreslí v **boxu před kamerou**, ne na trupu dronu.
+`[ROZHODNUTO 05.09.2026]`
+
+**Proč (stavba v kódu):** Stejný důvod jako u [rozhodnutí #12](decisions.md) a
+[#13](decisions.md) — scény ani prefaby se v tomhle repu needitují jako YAML, takže efekt jako asset
+by znamenal ruční zásah do scény plus `.meta` navíc. V kódu je celá věc jeden čitelný soubor.
+Textury se generují stejně jako vigneta v `DroneHUD.BuildVignetteSprite()`: bílá RGB, tvar v alfě,
+takže `Color` v Inspectoru tinktuje živě.
+
+**Proč (ruční blend state):** URP nastavuje blend mód z **editor-only** ShaderGUI
+(`BaseShaderGUI.SetupMaterialBlendMode`), který za běhu neexistuje. `ParticlesUnlit.shader` ale čte
+`Blend[_SrcBlend][_DstBlend] ZWrite[_ZWrite]` přímo z materiálu, takže aditivní míchání zapnou ty
+floaty, ne keyword. `FxAssets.BuildAdditive()` je ta metoda přepsaná ručně.
+
+**Proč (oblouky před kamerou, ne na trupu):** `Main Camera` sedí na drone-local `(0, 0.12, 0.629)`
+s near clipem 0,3 m, zatímco tělo dronu je krychle 1×1×1 vycentrovaná v počátku (world extents
+±(0,31, 0,19, 0,5)). Kamera je tedy **0,129 m před špičkou** a celý trup leží za rovinou kamery —
+nejbližší roh vychází skalárním součinem na −0,015. Oblouky „na trupu" by v first person
+**nebylo nikdy vidět**. `fieldCenter` / `fieldExtents` jsou proto drone-local box před objektivem;
+kdyby někdy přibyla chase kamera, stačí `fieldCenter` vynulovat a efekt sedí na trupu.
+
+**Proč (rig není child dronu):** Root dronu má scale `(0.61325, 0.38720787, 1)`. Child by to
+zploštění zdědil — je to tatáž past jako [rozhodnutí #4](decisions.md) — a u `LineRenderer` i
+`ParticleSystem` se šířka a velikost počítají z lossy scale. `DroneStunArcs` proto vyrábí
+**neparentovaný root objekt se scale 1** a v `LateUpdate` mu kopíruje pozici a rotaci dronu.
+`TurretHealthBar` si child dovolit může, protože root turretu scale 1 má.
+
+**Proč (pollování `IsStunned`):** Není to jen pohodlí — je to to, co drží pravidlo. `Stun()` se při
+i-frames (`stunImmunity`) vrátí dřív, než sáhne na `stunnedUntil`, takže odmítnutý zásah nechá
+`IsStunned` na `false` a oblouky se nespustí. Přesně stejné pravidlo jako červený rám HUD v
+[rozhodnutí #12](decisions.md), a jedou tím pádem na stejný takt.
+
+**Vylučuje:**
+
+- Instalaci VFX Graphu (`com.unity.visualeffectgraph`). Vestavěný `ParticleSystem` stačí.
+- Commitnutí particle prefabu, materiálu nebo textury pro efekty.
+- Pooling výbuchů. `Shoting.fireRate` je 0,5 s, takže špička jsou dva výbuchy za sekundu; jediná
+  alokace, na které záleželo, je materiál a textura, a ty sdílí `FxAssets` staticky.
+- Parentování efektů pod `Drone` (scale výš) nebo `FirePoint` (scale `(1.63, 2.58, 1)`).
+- Spuštění efektu stunu na místě zásahu nepřátelské rakety. Ta má po
+  [rozhodnutí #14](decisions.md) `speed: 1080`, takže trigger padne ~21 m za dronem a efekt by se
+  objevil v prázdném vzduchu. Kotví se na dron.
+- `AddComponent<DroneStunArcs>()` z `DroneControls.Start()`. Byla by to nulová změna scény, ale
+  drátovalo by to view kód do jediné fyzikální komponenty.
+- Výbuch jen na zemi. Střílí se při **každém** zásahu — terén, deska, turret.
+
+**Cena:** `Shader.Find` vidí jen shadery, na které se v buildu někdo odkazuje, a v tomhle projektu
+nikdo. V editoru to funguje vždycky, v player buildu vrátí `null`, dokud shader nebude v
+*Project Settings > Graphics > Always Included Shaders*. `FxAssets` na to hlásí warning a padá zpět
+na `Sprites/Default`, takže selhání je hlasité, ne magenta. Zapsáno v [backlog.md](backlog.md).
+
+**Kde:** [design/weapons.md](design/weapons.md), [reference/unity-gotchas.md](reference/unity-gotchas.md),
+[backlog.md](backlog.md), [../CLAUDE.md](../CLAUDE.md)
+
+---
+
+## #17 — Raketa hráče míří sweep testem; blesky jsou částice ve world space
+
+**Rozhodnutí:** Zásah rakety hráče se detekuje **raycastem po úseku mezi dvěma fyzikálními kroky**,
+ne diskrétním triggerem. Elektrický efekt při stunu jsou **částice simulované ve world space**
+(noise + trails), ne `LineRenderer` geometrie. A HDR barva se nastavuje **na materiálu**, nikdy na
+`startColor`. `[ROZHODNUTO 05.09.2026]`
+
+**Proč (sweep):** `rocket.prefab` má ve skutečnosti `speed: 120` — ne 30, jak tvrdily
+[design/weapons.md](design/weapons.md) i `CLAUDE.md`. To je **2,4 m za fyzikální krok** proti
+collideru 0,986 m, takže se testované pozice nepřekrývají a raketa **prolétla zhruba 59 % zásahů**
+bez jediného triggeru: bez poškození, bez logu, bez výbuchu. Strop ~49 m/s z
+[rozhodnutí #8](decisions.md) byl tedy tiše porušený už dřív; dokumentace byla zastaralá, prefab je
+autoritativní ([rozhodnutí #14](decisions.md)).
+
+Sweep to řeší **při jakékoli rychlosti** a jako vedlejší efekt vrací **skutečnou normálu povrchu** —
+kužel jisker se tak odráží od země správně, místo aby se odhadoval ze směru letu.
+
+**Proč (částice ve world space):** Předchozí verze kreslila `LineRenderer` oblouky s
+`LineAlignment.View` v boxu 1,1 m před objektivem. Bylo to zarovnané na obrazovku, přilepené ke
+kameře a bez paralaxy — četlo se to jako HUD overlay, ne jako děj ve světě. **World space je ta
+podstatná část:** částice zůstanou tam, kde vznikly, takže při letu proplouvají kolem objektivu a
+mají paralaxu. Přesně to odlišuje efekt ve světě od překryvu přes obrazovku.
+
+Jaggedness dělá **noise modul**, ne ručně skládané lomené čáry, a viditelný „oblouk" je **trail** za
+částicí. To je způsob, jakým se blesk v particle systému dělá.
+
+**Proč (HDR na materiálu):** `ParticleSystem` zapisuje barvu do vertex streamu jako `Color32`, takže
+`main.startColor = (5, 0.6, 0.15)` dorazí na GPU jako `(1, 0.6, 0.15)`. Nikdy nepřekročí threshold
+Bloomu (1), takže efekt **nezáří** — je to matná šmouha. `LineRenderer.startColor` ořezává stejně,
+takže původní oblouky by nezářily taky. `_BaseColor` je skutečný `float4` uniform a HDR přežije;
+posílá se přes `MaterialPropertyBlock` (`FxAssets.Tint`), takže se nealokuje materiál navíc a bez
+indexu to pokryje i trail materiál.
+
+**Vylučuje:**
+
+- Návrat rakety hráče k diskrétnímu triggeru, nebo „opravu" snížením `speed` zpátky pod 49.
+  `OnTriggerEnter` zůstává jen jako záloha za `consumed` guardem.
+- HDR barvu v `main.startColor`, `LineRenderer.startColor` / `endColor` nebo v `colorOverLifetime`.
+  Ty všechny jedou přes `Color32`. Gradienty tam smí řídit **jen alfu**.
+- `LineRenderer` oblouky, `LineAlignment.View` efekty a cokoli zarovnaného na obrazovku nebo
+  přilepeného ke kameře — to je ta „UI" varianta, kterou tohle nahrazuje.
+- `simulationSpace = Local` u blesků. Zrušilo by to paralaxu, tedy celý smysl.
+- Burst na `t = 0` u efektů stavěných v kódu. `AddComponent<ParticleSystem>()` systém rovnou rozjede,
+  takže se na hodiny v nule spolehnout nedá — emituje se explicitně přes `Play()` + `Emit(n)`.
+- Zrušení červeného rámu HUD. [Rozhodnutí #12](decisions.md) platí dál: rám říká **stav**, částice
+  říkají **příčinu**.
+
+**Co to nemění:** nepřátelská raketa (`enemy_rocket.prefab`, `speed: 1080`) prolétá dál a je to
+záměr ([rozhodnutí #14](decisions.md)). Sweep by se jí dal dát taky, ale jen kdyby se někdy chtěly
+spolehlivé zásahy — což by změnilo ladění boje.
+
+**Kde:** [design/weapons.md](design/weapons.md), [reference/unity-gotchas.md](reference/unity-gotchas.md),
+[backlog.md](backlog.md), [../CLAUDE.md](../CLAUDE.md)
