@@ -64,9 +64,27 @@ Obtížnost se volí **při zakládání nové hry** a určuje, co se stane, kdy
 | Obtížnost | Smrt |
 |---|---|
 | **Easy** | **Znovu se načte aktuální vlna.** Run pokračuje — vlna začne od začátku, karty z předchozích vln zůstávají. |
-| **Normal** | **Run končí.** |
+| **Normal** | **Run končí** → obrazovka s výsledkem (viz níž). |
 
 Co je smrt, se nemění: dron nemá HP a umírá dotekem pevného objektu ([#10](../decisions.md)).
+
+### Stěny a strop boxu
+
+Náraz do **stěny nebo stropu** arény se liší podle obtížnosti ([rozhodnutí #20](../decisions.md)):
+
+| Obtížnost | Náraz do stěny / stropu |
+|---|---|
+| **Easy** | **omráčí** — stejný stun jako nepřátelská střela, dron spadne, pokud ho hráč nevybere |
+| **Normal** | **zabije** — jako jakýkoli jiný dotek pevného objektu |
+
+### Obrazovka s výsledkem (konec runu)
+
+Po konci runu na Normal se ukáže souhrn, z něj se jde do main menu. Statistiky:
+
+- **dosažená vlna** v tomhle runu,
+- **nejlepší vlna** — rekord přes všechny runy,
+- **udělený damage** — v posledním kole i za celý run,
+- a další podobné (Viktor: „atd.") — viz otevřené otázky.
 
 ## Pauza (ESC) `[ZADÁNÍ]`
 
@@ -97,9 +115,8 @@ Ne zadání, ale důsledky, které je dobré mít na očích, než se do toho pu
 ## Otevřené otázky `[OTEVŘENÉ]`
 
 1. ~~**Co je smrt v runu?**~~ **ROZHODNUTO 03.10.2026** — podle obtížnosti, viz
-   sekci *Obtížnost a smrt* výš a [rozhodnutí #19](../decisions.md). Zbývá:
-   **zabíjí i stěny a strop boxu**, nebo jen podlaha a nepřátelé? A kam vede konec runu na Normal —
-   rovnou do main menu, nebo přes obrazovku s výsledkem (dosažená vlna)?
+   sekci *Obtížnost a smrt* výš a [rozhodnutí #19](../decisions.md). Stěny a strop
+   řeší [rozhodnutí #20](../decisions.md), konec runu na Normal vede přes obrazovku s výsledkem.
 2. ~~**Jaké upgrady existují?**~~ **ODLOŽENO 03.10.2026** — zatím žádné, Viktor je bude přidávat
    postupně. Systém karet, katalog i sandbox se tedy staví na **prázdný, rozšiřitelný seznam**:
    přidání upgradu má znamenat jeden nový záznam, ne změny v menu.
@@ -113,3 +130,7 @@ Ne zadání, ale důsledky, které je dobré mít na očích, než se do toho pu
 8. **Ovládání menu vysílačkou.** Menu jde přirozeně myší/klávesnicí — má jít projet i vysílačkou?
    Sandbox (psaní jména) bez klávesnice nepůjde.
 9. **Končí hra někdy?** Vyhrává se po určitém bossovi, nebo jsou vlny nekonečné?
+10. **Které další statistiky na obrazovku s výsledkem?** Návrhy: počet zničených turretů, přesnost
+    (zásahy / výstřely), čas runu, počet průletů žlutými kruhy, vybrané karty. „Nejlepší vlna" se
+    musí ukládat mimo run, aby přežila konec hry — rekordy jen pro Normal, nebo zvlášť pro každou
+    obtížnost?

@@ -12,7 +12,7 @@ vlnách se objevují podle [waves.md](waves.md) a boss je přivolává barevným
 |---|---|---|
 | **Šedý** (stun) | šedá | Střílí **kameny**, které dron **omráčí**. Model kamene je **pole v Inspectoru** (`GameObject`) — Viktor dodá model později. Stun má mít **kamenný vibe**; dnes je žlutý. |
 | **Modrý** (electric) | modrá | Kam střela dopadne, **odtamtud vyšlehne elektrický výboj**. Dnešní stun efekt (elektrické výboje kolem dronu, `DroneStunArcs`) **přechází na tenhle projektil**. |
-| **Červený** (explozivní) | červená | Projektil **vybuchne při doteku čehokoli** a **omráčí v poloměru** — nemusí trefit dron přímo, stačí dopadnout blízko. Proto je silnější než šedý. |
+| **Červený** (explozivní) | červená | Projektil **vybuchne při doteku čehokoli** a **omráčí v poloměru** (poloměr je pole v Inspectoru) — nemusí trefit dron přímo, stačí dopadnout blízko. Proto je silnější než šedý. |
 | **Zelený** (homing) | zelená | Střílí **naváděnou raketu**, která letí za hráčem. Turret sám stojí. |
 
 Důsledek: dnešní stun efekt se rozdělí. Šedý turret si nechá stun, ale s novým, kamenným vizuálem;
@@ -25,8 +25,8 @@ elektrické výboje patří modrému.
 2. **Modrý — co výboj dělá a kam míří?** Zasáhne hráče, jen když je blízko místa dopadu? Na jakou
    vzdálenost? Omráčí, jako to dělá dnešní stun? A co když střela trefí přímo dron?
 3. ~~**Červený — co výbuch udělá dronu?**~~ **ZODPOVĚZENO 03.10.2026** — **omráčí**, stejně jako
-   šedý, ale **v poloměru**, takže je silnější. Zbývá: **jak velký poloměr** a je stun stejně dlouhý
-   jako u šedého?
+   šedý, ale **v poloměru**, takže je silnější. **Poloměr je pole v Inspectoru** — Viktor si ho
+   chce ladit hraním, takže pevná hodnota se nenavrhuje. Zbývá: je stun stejně dlouhý jako u šedého?
 4. **Šedý — „kamenný vibe" stunu.** Jak má vypadat: prach, úlomky, otřes kamery? A znamená „teďka
    žlutá", že žlutá je dočasná barva, která se nahradí?
 5. **Jsou typy jinak odolné nebo rychlé?** HP, `fireRate`, `turnSpeed` a rychlost projektilu —

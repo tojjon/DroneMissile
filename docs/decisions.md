@@ -668,3 +668,21 @@ roguelite cenu chyby.
 - HP, životy a checkpointy uvnitř vlny — #10 platí, jedna chyba stojí vlnu (Easy) nebo run (Normal).
 
 **Kde:** [design/game-structure.md](design/game-structure.md)
+
+---
+
+## #20 — Stěny arény: na Easy omráčí, na Normal zabijí
+
+**Rozhodnutí:** Náraz do stěny nebo stropu uzavřeného boxu ([#18](decisions.md)) má na **Easy**
+stejný účinek jako zásah nepřátelskou střelou — **stun**. Na **Normal** zabíjí jako jakýkoli
+jiný dotek pevného objektu ([#10](decisions.md)).
+
+**Proč:** Na Easy by smrt o stěnu (a s ní restart vlny podle [#19](decisions.md)) trestala chybu
+letu v kleci příliš tvrdě. Stun je pořád nebezpečný — dron padá — ale dá se vybrat.
+
+**Vylučuje:** Na Easy „měkké" stěny bez následku (odraz, zpomalení). Náraz se pořád počítá.
+
+**Mění:** [#10](decisions.md) říká, že **jakýkoli** dotek pevného objektu je konec. Na Easy to od
+teď neplatí pro stěny a strop arény; podlaha a nepřátelé zabíjí dál na obou obtížnostech.
+
+**Kde:** [design/game-structure.md](design/game-structure.md)
