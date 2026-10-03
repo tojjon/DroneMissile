@@ -47,7 +47,7 @@ Hra po spuštění naběhne do hlavního menu:
 | Položka | Co dělá |
 |---|---|
 | **Continue** | Pokračuje v rozehrané hře. Jen pokud nějaká existuje. |
-| **New game** | Založí novou hru od vlny 1. |
+| **New game** | Hráč zvolí **obtížnost** (viz níž) a začne novou hru od vlny 1. |
 | **Sandbox** | Volný svět na zkoušení upgradů — viz níž. |
 | **Upgrades** | Katalog všech upgradů: obrázek a popis, co dělá. |
 
@@ -55,6 +55,18 @@ Hra po spuštění naběhne do hlavního menu:
 
 Otevřený svět bez vln. Po stisku **Enter** se otevře pole, hráč napíše **jméno upgradu** a dron
 ho dostane. Smysl: vyzkoušet si jednotlivé upgrady a jejich kombinace bez nutnosti je vyhrát v runu.
+
+## Obtížnost a smrt `[ZADÁNÍ]`
+
+Obtížnost se volí **při zakládání nové hry** a určuje, co se stane, když dron zemře
+([rozhodnutí #19](../decisions.md)):
+
+| Obtížnost | Smrt |
+|---|---|
+| **Easy** | **Znovu se načte aktuální vlna.** Run pokračuje — vlna začne od začátku, karty z předchozích vln zůstávají. |
+| **Normal** | **Run končí.** |
+
+Co je smrt, se nemění: dron nemá HP a umírá dotekem pevného objektu ([#10](../decisions.md)).
 
 ## Pauza (ESC) `[ZADÁNÍ]`
 
@@ -77,16 +89,20 @@ Ne zadání, ale důsledky, které je dobré mít na očích, než se do toho pu
   podle jména — upgrade musí jít dronu přidat za běhu.
 - **Pauza.** Výběr karet i ESC menu zastavují hru (`Time.timeScale`), a dron s Rigidbody musí
   pauzu přežít beze změny.
-- **Kolize s [rozhodnutím #10](../decisions.md).** Dnes jakýkoli dotek pevného objektu restartuje
-  scénu. V uzavřeném boxu to znamená, že **stěny a strop zabíjí**, a restart scény by smazal celý
-  run i vybrané karty — viz otázka 1.
+- **Smrt už nesmí načítat celou scénu.** Dnes ji [rozhodnutí #10](../decisions.md) restartuje
+  přes `SceneManager.LoadScene`, což by smazalo run i karty. Easy potřebuje vrátit **jen vlnu**
+  (nepřátele, pozici dronu) a stav runu držet mimo scénu.
+- **Obtížnost patří do uložené hry**, aby ji *Continue* znal.
 
 ## Otevřené otázky `[OTEVŘENÉ]`
 
-1. **Co je smrt v runu?** Dron nemá HP a pád dnes znovu načte scénu ([#10](../decisions.md)). Má
-   smrt ukončit celý run (zpět do menu), nebo restartovat jen aktuální vlnu? Zabíjí i stěny boxu?
-2. **Jaké upgrady existují?** Bez seznamu nejde udělat karty, katalog ani sandbox. Kolik jich je
-   v každé raritě?
+1. ~~**Co je smrt v runu?**~~ **ROZHODNUTO 03.10.2026** — podle obtížnosti, viz
+   sekci *Obtížnost a smrt* výš a [rozhodnutí #19](../decisions.md). Zbývá:
+   **zabíjí i stěny a strop boxu**, nebo jen podlaha a nepřátelé? A kam vede konec runu na Normal —
+   rovnou do main menu, nebo přes obrazovku s výsledkem (dosažená vlna)?
+2. ~~**Jaké upgrady existují?**~~ **ODLOŽENO 03.10.2026** — zatím žádné, Viktor je bude přidávat
+   postupně. Systém karet, katalog i sandbox se tedy staví na **prázdný, rozšiřitelný seznam**:
+   přidání upgradu má znamenat jeden nový záznam, ne změny v menu.
 3. **Barvy Legendary a Mythic.** Návrh: Legendary oranžová / zlatá, Mythic červená — potvrdit.
 4. **Můžou se karty opakovat?** Ve stejné nabídce, a znovu ten samý upgrade v dalších vlnách
    (stackování)?

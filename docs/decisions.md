@@ -644,3 +644,27 @@ Vlny dávají hře cíl a postup, který dnes chybí, a karty dávají důvod hr
 
 **Kde:** [concept.md](concept.md), [design/game-structure.md](design/game-structure.md),
 [design/waves.md](design/waves.md), [design/enemies.md](design/enemies.md)
+
+---
+
+## #19 — Obtížnost určuje, co je smrt v runu
+
+**Rozhodnutí:** Při zakládání nové hry se volí obtížnost:
+
+- **Easy** — smrt **znovu načte aktuální vlnu**. Run i karty z předchozích vln zůstávají.
+- **Normal** — smrt **ukončí run**.
+
+Co je smrt, se nemění: dron nemá HP a umírá dotekem pevného objektu ([rozhodnutí #10](decisions.md)).
+Mění se jen to, **co po ní následuje**.
+
+**Proč:** Odpovídá na napětí s #10 zapsané u [rozhodnutí #18](decisions.md) — restart celé scény
+by v runu smazal vlnu i vybrané karty. Easy dává prostor učit se vlnu znovu, Normal drží
+roguelite cenu chyby.
+
+**Vylučuje:**
+
+- Restart celé scény jako následek smrti v runu. `SceneManager.LoadScene` z #10 platí dál jen
+  mimo run; v runu se resetuje vlna a stav runu žije mimo scénu.
+- HP, životy a checkpointy uvnitř vlny — #10 platí, jedna chyba stojí vlnu (Easy) nebo run (Normal).
+
+**Kde:** [design/game-structure.md](design/game-structure.md)
