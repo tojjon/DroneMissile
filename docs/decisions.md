@@ -686,3 +686,6 @@ letu v kleci příliš tvrdě. Stun je pořád nebezpečný — dron padá — a
 teď neplatí pro stěny a strop arény; podlaha a nepřátelé zabíjí dál na obou obtížnostech.
 
 **Kde:** [design/game-structure.md](design/game-structure.md)
+
+**Doplnění 03.10.2026:** Viktor potvrdil, že podlaha a nepřátelé na Easy dál zabíjí — jinak by se
+na Easy nedalo umřít vůbec.

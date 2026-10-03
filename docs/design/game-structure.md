@@ -77,6 +77,9 @@ Náraz do **stěny nebo stropu** arény se liší podle obtížnosti ([rozhodnut
 | **Easy** | **omráčí** — stejný stun jako nepřátelská střela, dron spadne, pokud ho hráč nevybere |
 | **Normal** | **zabije** — jako jakýkoli jiný dotek pevného objektu |
 
+**Podlaha a nepřátelé zabíjí na obou obtížnostech** `[POTVRZENO 03.10.2026]` — jinak by se na
+Easy nedalo umřít vůbec.
+
 ### Obrazovka s výsledkem (konec runu)
 
 Po konci runu na Normal se ukáže souhrn, z něj se jde do main menu. Statistiky:
@@ -85,6 +88,9 @@ Po konci runu na Normal se ukáže souhrn, z něj se jde do main menu. Statistik
 - **nejlepší vlna** — rekord přes všechny runy,
 - **udělený damage** — v posledním kole i za celý run,
 - a další podobné (Viktor: „atd.") — viz otevřené otázky.
+
+Obrazovka má i **záložku s upgrady**: přehled karet, které hráč za run vybral — stejné zobrazení
+jako *Upgrades* v ESC menu, jen pro skončený run.
 
 ## Pauza (ESC) `[ZADÁNÍ]`
 
@@ -131,6 +137,6 @@ Ne zadání, ale důsledky, které je dobré mít na očích, než se do toho pu
    Sandbox (psaní jména) bez klávesnice nepůjde.
 9. **Končí hra někdy?** Vyhrává se po určitém bossovi, nebo jsou vlny nekonečné?
 10. **Které další statistiky na obrazovku s výsledkem?** Návrhy: počet zničených turretů, přesnost
-    (zásahy / výstřely), čas runu, počet průletů žlutými kruhy, vybrané karty. „Nejlepší vlna" se
+    (zásahy / výstřely), čas runu, počet průletů žlutými kruhy, „Nejlepší vlna" se
     musí ukládat mimo run, aby přežila konec hry — rekordy jen pro Normal, nebo zvlášť pro každou
     obtížnost?
