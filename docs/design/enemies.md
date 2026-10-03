@@ -1,6 +1,38 @@
 # Nepřátelé
 
-Zatím existuje jediný typ: **pozemní turret**.
+Zatím existuje jediný typ: **pozemní turret**. Předělání hry ([rozhodnutí #18](../decisions.md))
+z něj dělá čtyři barevné varianty, viz níž. Všechno pod tou sekcí popisuje **dnešní** turret.
+
+## Barevné typy turretů `[ZADÁNÍ]`
+
+Zdroj: Viktorův podklad *Wavky*, 03.10.2026. Barva turretu říká, **jaký projektil střílí**. Ve
+vlnách se objevují podle [waves.md](waves.md) a boss je přivolává barevnými kuličkami.
+
+| Typ | Barva | Co dělá |
+|---|---|---|
+| **Šedý** (stun) | šedá | Střílí **kameny**, které dron **omráčí**. Model kamene je **pole v Inspectoru** (`GameObject`) — Viktor dodá model později. Stun má mít **kamenný vibe**; dnes je žlutý. |
+| **Modrý** (electric) | modrá | Kam střela dopadne, **odtamtud vyšlehne elektrický výboj**. Dnešní stun efekt (elektrické výboje kolem dronu, `DroneStunArcs`) **přechází na tenhle projektil**. |
+| **Červený** (explozivní) | červená | Projektil **vybuchne při doteku čehokoli**. |
+| **Zelený** (homing) | zelená | **Navádí se za hráčem.** |
+
+Důsledek: dnešní stun efekt se rozdělí. Šedý turret si nechá stun, ale s novým, kamenným vizuálem;
+elektrické výboje patří modrému.
+
+### Otevřené otázky k typům `[OTEVŘENÉ]`
+
+1. **Zelený — letí za hráčem střela, nebo celý turret?** Podklad doslova říká „turetka letí za
+   player". Pracovní výklad je **naváděná střela** (ostatní typy popisují projektil), ale létající
+   turret, který hráče pronásleduje, by byl úplně jiný nepřítel — potvrdit.
+2. **Modrý — co výboj dělá a kam míří?** Zasáhne hráče, jen když je blízko místa dopadu? Na jakou
+   vzdálenost? Omráčí, jako to dělá dnešní stun? A co když střela trefí přímo dron?
+3. **Červený — co výbuch udělá dronu?** Dron nemá HP ([rozhodnutí #10](../decisions.md)), takže
+   výbuch nemůže ubírat zdraví. Omráčí? Odhodí dron tlakovou vlnou? Zabije v určitém poloměru?
+4. **Šedý — „kamenný vibe" stunu.** Jak má vypadat: prach, úlomky, otřes kamery? A znamená „teďka
+   žlutá", že žlutá je dočasná barva, která se nahradí?
+5. **Jsou typy jinak odolné nebo rychlé?** HP, `fireRate`, `turnSpeed` a rychlost projektilu —
+   stejné pro všechny barvy, nebo každý typ jinak?
+6. **Pilíř „vše je uhýbatelné"** ([concept.md](../concept.md)). Naváděná střela se mu nevylučuje,
+   ale musí být jasné, jak se jí uhýbá — omezená zatáčivost, omezená doba letu?
 
 ## Turret — herní požadavky `[ZADÁNÍ]`
 

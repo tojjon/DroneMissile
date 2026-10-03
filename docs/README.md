@@ -22,7 +22,9 @@ je špatná. Jedinou výjimkou jsou bloky označené `[OVĚŘENO]`, které zám�
 | [design/flight-model.md](design/flight-model.md) | letová fyzika — acro požadavky a tuning |
 | [design/controls.md](design/controls.md) | mapování os (Mode 2), klávesnice, filozofie ovládání |
 | [design/weapons.md](design/weapons.md) | zbraně hráče, pravidlo „fyzické projektily" |
-| [design/enemies.md](design/enemies.md) | turrety a budoucí typy nepřátel |
+| [design/enemies.md](design/enemies.md) | turrety, jejich barevné typy a budoucí nepřátelé |
+| [design/game-structure.md](design/game-structure.md) | herní smyčka — aréna, vlny, karty upgradů, main menu, ESC, sandbox |
+| [design/waves.md](design/waves.md) | obsah vln, boss, žluté kruhy |
 | [reference/radiomaster-pocket.md](reference/radiomaster-pocket.md) | HID detaily vysílačky — draze zjištěné, needitovat z hlavy |
 | [reference/unity-gotchas.md](reference/unity-gotchas.md) | Unity pasti, na které jsme narazili |
 | [decisions.md](decisions.md) | rozhodovací log — jedno rozhodnutí = jeden záznam, append-only |

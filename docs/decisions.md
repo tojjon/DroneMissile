@@ -610,3 +610,37 @@ spolehlivé zásahy — což by změnilo ladění boje.
 
 **Kde:** [design/weapons.md](design/weapons.md), [reference/unity-gotchas.md](reference/unity-gotchas.md),
 [backlog.md](backlog.md), [../CLAUDE.md](../CLAUDE.md)
+
+---
+
+## #18 — Předělání: arénový survival po vlnách s kartami upgradů
+
+**Rozhodnutí:** Hra se předělává z jedné scény s jedním turretem na **vlny nepřátel ve velkém
+uzavřeném boxu**. Každá desátá vlna je boss. Po každé vlně se hra zastaví a nabídne 5 náhodných
+karet upgradů s raritou (common 60 % → mythic 1 %). Přibývá main menu (Continue / New game /
+Sandbox / Upgrades), ESC pauza a čtyři barevné typy turretů podle projektilu (šedý stun, modrý
+electric, červený explozivní, zelený homing). Zdroj: Viktorovy podklady *Základní info o hře* a
+*Wavky*, 03.10.2026.
+
+**Proč:** Odpovídá na otevřenou otázku #1 v [concept.md](concept.md) („kam to má směřovat?").
+Vlny dávají hře cíl a postup, který dnes chybí, a karty dávají důvod hrát znovu.
+
+**Vylučuje:**
+
+- Otevřenou misi s definovaným cílem a časovku jako hlavní režim. Volný svět zůstává jen jako
+  **sandbox** na zkoušení upgradů.
+- Jednu scénu jako celou hru — main menu, aréna a sandbox jsou samostatné celky.
+
+**Co to nemění:** pilíře z [concept.md](concept.md) platí — acro let, fyzické projektily
+([#3](decisions.md)), turrety s HP ([#5](decisions.md)).
+
+**Napětí s dřívějšími rozhodnutími — nerozhodnuto `[OTEVŘENÉ]`:**
+
+- **[#10](decisions.md)** — pád dnes znovu načte scénu, což by
+  v runu smazalo vlnu i karty, a v uzavřeném boxu by zabíjely stěny. Co je smrt v runu, je
+  otázka #1 v [design/game-structure.md](design/game-structure.md).
+- **[#13](decisions.md)** — boss má health bar **v HUDu**
+  nahoře na obrazovce, ne ve světě. Výjimka jen pro bosse; běžné turrety mají pruh dál nad sebou.
+
+**Kde:** [concept.md](concept.md), [design/game-structure.md](design/game-structure.md),
+[design/waves.md](design/waves.md), [design/enemies.md](design/enemies.md)

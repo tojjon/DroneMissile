@@ -8,6 +8,16 @@ nepřátelské pozemní věže (turrety), které po něm střílí zpět.
 Vzniklo to jako primitivní FPV simulátor a přerostlo to do shooteru. To pořadí je důležité:
 **letová fyzika je základ, střílení je nadstavba.** Kdyby si někdy protiřečily, ustupuje střílení.
 
+## Směr: předělání na arénu s vlnami `[ZADÁNÍ]`
+
+Od 03.10.2026 hra míří od jedné scény s jedním turretem k **roguelite smyčce**: vlny nepřátel
+v uzavřeném boxu, boss každou desátou vlnu, mezi vlnami výběr upgradu z karet různé rarity.
+Nepřátelé dostanou čtyři barevné typy podle projektilu. Viz [rozhodnutí #18](decisions.md),
+[design/game-structure.md](design/game-structure.md), [design/waves.md](design/waves.md) a
+[design/enemies.md](design/enemies.md).
+
+Pilíře níž platí dál — předělání mění **strukturu** hry, ne cit letu.
+
 ## Herní pilíře
 
 1. **Věrný acro let.** Cílová skupina jsou lidi, co reálně létají FPV. Cit letu se neobětuje
@@ -42,8 +52,10 @@ Tohle nejsou bugy, tohle jsou nerozhodnuté věci. Žádná z nich není zadaná
 
 Tohle je potřeba rozhodnout dřív než cokoliv z toho výše, protože to určuje, co má vůbec smysl dělat:
 
-1. **Kam to má směřovat?** Sandbox na létání s cíli k odstřelení / mise s definovaným cílem /
-   arénová vlna nepřátel / časovka? Každá varianta chce jinou infrastrukturu.
+1. ~~**Kam to má směřovat?**~~ **ROZHODNUTO 03.10.2026** — [rozhodnutí #18](decisions.md).
+   **Arénový survival po vlnách** v uzavřeném boxu, boss každou 10. vlnu, po vlně výběr z 5 karet
+   upgradů; k tomu main menu, ESC pauza a sandbox na zkoušení upgradů. Detaily v
+   [design/game-structure.md](design/game-structure.md) a [design/waves.md](design/waves.md).
 2. **Je to FPV, nebo third-person?** Ve scéně je `Main Camera` — chová se to jako FPV z pohledu
    dronu (což by koncept vyžadoval), nebo se dron pozoruje z boku? Na tom stojí celý „FPV" v názvu.
 3. ~~**Umírá hráč?**~~ **ROZHODNUTO 04.09.2026** — [rozhodnutí #10](decisions.md). Dron nemá HP;
