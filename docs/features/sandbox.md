@@ -1,6 +1,6 @@
 # Sandbox
 
-**Stav:** hotovo (bez konzole upgradů) · otestováno hraním: ano (04.10.2026) ·
+**Stav:** hotovo · otestováno hraním: ano (04.10.2026, i konzole upgradů) ·
 `[OVĚŘENO 04.10.2026]`
 
 ## Co to je
@@ -24,14 +24,28 @@ nikdy nestřílí dva najednou.
 
 Pád znovu načte sandbox. **Esc** vrací do menu.
 
-## Zbývá
+## Konzole upgradů
 
-**Konzole upgradů:** Enter → napsat jméno upgradu → dron ho dostane. Čeká na systém upgradů.
+**Enter** otevře pole vlevo dole a hra se zastaví. Napiš jméno upgradu a Enter — dron ho dostane
+(další stack, pokud už ho má). Stačí začátek jména a nezáleží na velikosti písmen ani mezerách
+(`dou` = Double Strike). Pod polem se vypisují upgrady, které odpovídají napsanému.
+
+| Příkaz | Co udělá |
+|---|---|
+| `jméno` | přidá upgrade |
+| `remove jméno` | sundá jeden stack |
+| `clear` | sundá všechno |
+| prázdný Enter / **Esc** | zavře konzoli (Esc tady neodchází do menu) |
+
+Upgrady **přežijí pád** — vynuluje je až návrat do menu. Vlastněné upgrady jsou vypsané vlevo dole.
+Funguje i po Hardcore runu (obtížnost v sandboxu nic neblokuje). Plán:
+[plans/archive/sandbox-console.md](../plans/archive/sandbox-console.md).
 
 ## Kde v projektu
 
 `Assets/Scenes/Sandbox.unity`. Vyrábí `Tools > DroneMissile > Build Sandbox Scene` (kopie +
-rozmístění turretů); **ruční úpravy přepíše další spuštění.**
+rozmístění turretů + konzole); **ruční úpravy přepíše další spuštění.** Konzole: `SandboxConsole`,
+do existující scény ji přidá `Tools > DroneMissile > Add Sandbox Console`.
 
 ## Souvisí
 

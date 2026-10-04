@@ -352,6 +352,9 @@ MonoBehaviour:
   crosshairThickness: 2
   crosshairOutline: 1
   crosshairOutlineColor: {r: 0, g: 0, b: 0, a: 0.6}
+  scopeColor: {r: 1, g: 1, b: 1, a: 0.6}
+  scopeLockedColor: {r: 1, g: 0.2, b: 0.2, a: 0.95}
+  scopeThickness: 3
 --- !u!4 &252681210
 Transform:
   m_ObjectHideFlags: 0
@@ -552,6 +555,15 @@ MonoBehaviour:
   rocketPrefab: {fileID: 7044272535471621713, guid: 42ec168b9deb7d1438e3a84b7f54a3ce, type: 3}
   firePoint: {fileID: 711199479}
   fireRate: 0.5
+  burstInterval: 0.1
+  homingScopeBase: 0.25
+  homingScopePerStack: 0.1
+  homingScopeMax: 0.8
+  homingTurnBase: 90
+  homingTurnPerStack: 60
+  homingRange: 300
+  chainRange: 160
+  chainDamageFraction: 0.5
 --- !u!114 &315145756
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1814,6 +1826,65 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 46e82125db93393b1835845119967749, type: 3}
+--- !u!1 &2027627543
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2027627545}
+  - component: {fileID: 2027627544}
+  m_Layer: 0
+  m_Name: SandboxConsole
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2027627544
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2027627543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c622c523a0facc390a93953e95ea7a82, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SandboxConsole
+  style:
+    titleFontSize: 84
+    buttonFontSize: 34
+    buttonSize: {x: 420, y: 68}
+    buttonSpacing: 14
+    titleColor: {r: 1, g: 1, b: 1, a: 1}
+    panelColor: {r: 0, g: 0, b: 0, a: 0.55}
+    buttonColor: {r: 0.12, g: 0.12, b: 0.14, a: 0.9}
+    buttonHighlightColor: {r: 0.95, g: 0.45, b: 0.1, a: 1}
+    buttonTextColor: {r: 1, g: 1, b: 1, a: 1}
+    disabledTextColor: {r: 1, g: 1, b: 1, a: 0.3}
+  messageSeconds: 3
+  errorColor: {r: 1, g: 0.35, b: 0.3, a: 1}
+  okColor: {r: 0.5, g: 1, b: 0.5, a: 1}
+  hintColor: {r: 1, g: 1, b: 1, a: 0.6}
+--- !u!4 &2027627545
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2027627543}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2058458349
 GameObject:
   m_ObjectHideFlags: 0
@@ -2025,3 +2096,4 @@ SceneRoots:
   - {fileID: 1285754067}
   - {fileID: 1576580695}
   - {fileID: 1609437649}
+  - {fileID: 2027627545}

@@ -103,11 +103,37 @@ public static class MainMenuBuilder
 
         Scene scene = EditorSceneManager.OpenScene(SandboxPath, OpenSceneMode.Single);
         AddReturnToMenu();
+        AddConsoleToOpenScene();
 
         // The four turret types, spaced so they engage one at a time (docs/decisions.md #22).
         TurretTypesBuilder.PlaceInOpenSandbox();
         EditorSceneManager.SaveScene(scene);
         Debug.Log("MainMenuBuilder: built " + SandboxPath + ".");
+    }
+
+    // The upgrade console (docs/plans/sandbox-console.md). Idempotent, and unlike a full rebuild it
+    // leaves the rest of the Sandbox scene alone.
+    [MenuItem("Tools/DroneMissile/Add Sandbox Console")]
+    public static void AddSandboxConsole()
+    {
+        if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+        Scene scene = EditorSceneManager.OpenScene(SandboxPath, OpenSceneMode.Single);
+        AddConsoleToOpenScene();
+        EditorSceneManager.SaveScene(scene);
+        Debug.Log("MainMenuBuilder: SandboxConsole in " + SandboxPath + ".");
+    }
+
+    static void AddConsoleToOpenScene()
+    {
+        const string name = "SandboxConsole";
+        GameObject go = GameObject.Find(name);
+        if (go == null)
+        {
+            go = new GameObject(name);
+            Undo.RegisterCreatedObjectUndo(go, "Create SandboxConsole");
+        }
+        if (go.GetComponent<SandboxConsole>() == null) Undo.AddComponent<SandboxConsole>(go);
+        EditorSceneManager.MarkSceneDirty(go.scene);
     }
 
     // TEMPORARY - see ReturnToMenu. Idempotent.

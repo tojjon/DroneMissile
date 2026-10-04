@@ -20,7 +20,8 @@ je záloha na testování. Rozložení Mode 2.
 Pitch a roll jsou invertované (Viktorova preference). Throttle se přepočítává z −1..1 na 0..1.
 
 V menu se ovládá myší nebo šipkami + Enter. **Esc** ve hře a v sandboxu zatím vrací rovnou do menu
-(dočasně, `ReturnToMenu`).
+(dočasně, `ReturnToMenu`). **Enter** v sandboxu otevře konzoli upgradů
+([sandbox.md](sandbox.md)); Esc ji pak zavře, ze sandboxu neodejde.
 
 ## Známé věci
 

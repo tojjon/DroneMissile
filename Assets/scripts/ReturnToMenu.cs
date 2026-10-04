@@ -11,6 +11,8 @@ public class ReturnToMenu : MonoBehaviour
 {
     void Update()
     {
+        // The sandbox console closes on Esc too - that press must not also leave the sandbox.
+        if (SandboxConsole.HoldsEscape) return;
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             SceneManager.LoadScene(GameSession.MainMenuScene);

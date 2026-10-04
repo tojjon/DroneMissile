@@ -842,3 +842,23 @@ je výslovná výjimka**, jen s kartou; bez ní #12 platí. Čtverec Homingu je 
 **Vylučuje:** upgrady na Hardcore ([#25](decisions.md)) — `GameSession.AddUpgrade` je tam ignoruje.
 
 **Kde:** [features/upgrades.md](features/upgrades.md), [../CLAUDE.md](../CLAUDE.md)
+
+---
+
+## #27 — Konzole upgradů v sandboxu: hra stojí, Hardcore neplatí, upgrady přežijí pád
+
+**Rozhodnutí:** V sandboxu Enter otevře konzoli; jméno upgradu (stačí jednoznačný začátek) ho
+přidá, `remove jméno` sundá jeden stack, `clear` všechno. Při psaní hra stojí (`timeScale 0`).
+Upgrady přežijí pád (reload scény), vynuluje je návrat do menu. Viktor, 04.10.2026.
+
+**Proč:** Sandbox je na zkoušení upgradů a kombinací bez runu; přijít o sestavu při každém pádu by
+konzoli znehodnotilo. Pauza brání tomu, aby WASD při psaní řídilo dron.
+
+**Mění:** [#25](decisions.md) — `GameSession.AddUpgrade(id, sandbox: true)` obejde kontrolu
+Hardcore; obtížnost z posledního runu v sandboxu nic neznamená. V runu platí #25 beze změny.
+
+**Vylučuje:** odebírání upgradů v runu — `RemoveUpgrade`/`ClearUpgrades` volá jen konzole (a
+`ResetRun`).
+
+**Kde:** [features/sandbox.md](features/sandbox.md),
+[plans/archive/sandbox-console.md](plans/archive/sandbox-console.md)

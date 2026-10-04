@@ -44,8 +44,7 @@ public static class GameSession
         DamageThisWave = 0;
         DamageTotal = 0;
         TurretsDestroyed = 0;
-        upgradeOrder.Clear();
-        upgradeStacks.Clear();
+        ClearUpgrades();
     }
 
     // ---- upgrades owned in this run (docs/plans/upgrades.md) --------------------------------
@@ -62,15 +61,39 @@ public static class GameSession
         return upgradeStacks.TryGetValue(id, out int n) ? n : 0;
     }
 
-    public static void AddUpgrade(string id)
+    // `sandbox` skips the Hardcore check: the sandbox console grants on request, and the difficulty
+    // left over from the last run means nothing there.
+    public static void AddUpgrade(string id, bool sandbox = false)
     {
-        if (!UpgradesEnabled) return;   // Hardcore (#25)
+        if (!UpgradesEnabled && !sandbox) return;   // Hardcore (#25)
         if (!upgradeStacks.ContainsKey(id))
         {
             upgradeStacks[id] = 0;
             upgradeOrder.Add(id);
         }
         upgradeStacks[id]++;
+    }
+
+    // One stack. Sandbox console only - nothing in a run takes an upgrade away.
+    public static bool RemoveUpgrade(string id)
+    {
+        if (!upgradeStacks.TryGetValue(id, out int n)) return false;
+        if (n > 1)
+        {
+            upgradeStacks[id] = n - 1;
+        }
+        else
+        {
+            upgradeStacks.Remove(id);
+            upgradeOrder.Remove(id);
+        }
+        return true;
+    }
+
+    public static void ClearUpgrades()
+    {
+        upgradeOrder.Clear();
+        upgradeStacks.Clear();
     }
 
     public static void ResetWaveStats()

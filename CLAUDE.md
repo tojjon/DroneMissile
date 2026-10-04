@@ -94,7 +94,7 @@ editor log to stdout; without it the log goes to `Logs/` (gitignored).
 
 ## Architecture
 
-Twenty-two `MonoBehaviour` scripts, one `ScriptableObject` (`UpgradeDefinition`) and static helpers (`FxAssets`, `GameSession`, `UiKit`, `UpgradeCatalog`, `Rarities`, `UpgradeIds`) in `Assets/scripts/`, no assembly
+Twenty-three `MonoBehaviour` scripts, one `ScriptableObject` (`UpgradeDefinition`) and static helpers (`FxAssets`, `GameSession`, `UiKit`, `UpgradeCatalog`, `Rarities`, `UpgradeIds`) in `Assets/scripts/`, no assembly
 definitions — everything compiles into the default `Assembly-CSharp`. There is no manager, service
 locator, or event bus; components find each other at runtime through **Unity tags**, and are wired
 to prefabs/scene objects through serialized public fields set in the Inspector. `Assets/Editor/`
@@ -349,6 +349,13 @@ All tuning is on `Shoting`. `Assets/Editor/UpgradesBuilder.cs` (`Tools > DroneMi
 Upgrades`) imports `Assets/UI/Upgrades/*.png` as point-filtered sprites and creates missing
 definition assets. Card UI helpers (`NewCardArt`, `NewCardButton`, art at whole-number scale) are
 in `UiKit`.
+
+**The sandbox has an upgrade console.** `SandboxConsole` (on its own object in `Sandbox`, added by
+`Tools > DroneMissile > Add Sandbox Console` and by Build Sandbox Scene): Enter opens a legacy
+`InputField`, pauses with `timeScale = 0`, and grants upgrades by id/name prefix through
+`GameSession.AddUpgrade(id, sandbox: true)` (bypasses the Hardcore check); `remove`/`clear` use
+`RemoveUpgrade`/`ClearUpgrades`. `ReturnToMenu` checks `SandboxConsole.HoldsEscape` so the Esc that
+closes the console doesn't leave the scene. Plan: `docs/plans/sandbox-console.md`.
 
 **The main menu is a scene of its own, built in code like the HUD — but it takes input.**
 `MainMenu.unity` and `Sandbox.unity` are **copies of `SampleScene`** made by

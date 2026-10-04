@@ -29,5 +29,4 @@ Věci, které **se dělají nebo jsou jen naplánované** — zadané, ale nepos
 | [Upgrady a karty](upgrades.md) | postaveno, čeká na test | — |
 | [ESC menu](esc-menu.md) | plánováno | — |
 | [Ukládání a Continue](save-continue.md) | plánováno | nejlépe až po upgradech (ukládají se taky) |
-| [Konzole upgradů v sandboxu](sandbox-console.md) | plánováno | upgrady |
 | [Model kamene a kamenný stun](rock-model.md) | rozpracováno | model (Viktor) |
