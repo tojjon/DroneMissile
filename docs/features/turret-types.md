@@ -42,5 +42,5 @@ ostatní tři **sweep** (spolehlivé zásahy).
 ## Souvisí
 
 [stun.md](stun.md), [sandbox.md](sandbox.md), [waves.md](waves.md),
-[design/enemies.md](../design/enemies.md), [concepts/turret-types.md](../concepts/turret-types.md),
+[design/enemies.md](../design/enemies.md), [plans/archive/turret-types.md](../plans/archive/turret-types.md),
 rozhodnutí [#22](../decisions.md).

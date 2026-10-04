@@ -1,15 +1,24 @@
 # Plány
 
-Věci, které **se dělají nebo jsou jen naplánované** — zadané, ale nepostavené. Jakmile se featura
-dostaví, její popis se přesune do [../features/](../features/) a tady se smaže (nebo odkáže).
-
-Rozdíl proti ostatním složkám:
+Věci, které **se dělají nebo jsou jen naplánované** — zadané, ale nepostavené.
 
 | Složka | Co v ní je |
 |---|---|
-| `plans/` | co **teprve bude** — zadání, návrh implementace, otevřené otázky |
-| [`concepts/`](../concepts/) | implementační plány, podle kterých se **už postavilo** |
-| [`features/`](../features/) | co ve hře **je teď** |
+| `plans/` | co **teprve bude nebo se právě dělá** — zadání, plán implementace, otevřené otázky |
+| [`plans/archive/`](archive/README.md) | plány **dokončené a uzavřené** |
+| [`features/`](../features/README.md) | co ve hře **je teď** |
+
+## Postup pro novou featuru
+
+1. **Zapsat do plánů.** Nový dokument `plans/<featura>.md` se stavem *plánováno*: zadání
+   (`[ZADÁNÍ]`), co už je připravené, otevřené otázky. Přidat řádek do seznamu níž.
+2. **Napsat plán implementace** do téhož dokumentu (sekce *Plán implementace*): kontext, co je
+   dohodnuté, přístup, dotčené soubory, ověření, mimo rozsah. Stav → *rozpracováno*.
+3. **Stavět** a průběžně psát do dokumentu odchylky od plánu (sekce *Odchylky při implementaci*).
+4. **Po dokončení:** popis hotové featury do [`features/`](../features/README.md) (nový dokument
+   nebo úprava existujícího + řádek v jejím indexu), rozhodnutí do
+   [`decisions.md`](../decisions.md), a plán **přesunout do [`archive/`](archive/README.md)** se
+   stavem *hotovo* a odkazem na commit. Řádek tady smazat.
 
 ## Seznam
 

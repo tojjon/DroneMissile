@@ -2,12 +2,12 @@
 
 **Plán ze session 04.10.2026.** Stav: **implementováno** (commit `0db0288`), v sandboxu otestováno
 hraním — všechny typy fungují podle záměru. Hotová podoba je v
-[features/turret-types.md](../features/turret-types.md) a [features/stun.md](../features/stun.md).
-Rozhodnutí je [#22](../decisions.md).
+[features/turret-types.md](../../features/turret-types.md) a [features/stun.md](../../features/stun.md).
+Rozhodnutí je [#22](../../decisions.md).
 
 ## Kontext
 
-Předělání ([#18](../decisions.md), [design/enemies.md](../design/enemies.md)) nahrazuje jediný
+Předělání ([#18](../../decisions.md), [design/enemies.md](../../design/enemies.md)) nahrazuje jediný
 turret čtyřmi barevnými typy, které se liší tím, co střílí. Vlny a boss je budou spawnovat, takže
 musí existovat jako **prefaby** — do té doby žil jediný turret jen ve scéně a žádný prefab neexistoval.
 
@@ -15,7 +15,7 @@ musí existovat jako **prefaby** — do té doby žil jediný turret jen ve scé
 
 | Typ | Projektil | Pravidlo zásahu |
 |---|---|---|
-| **Šedý** (stun) | kámen — model je pole `GameObject` v Inspectoru, Viktor dodá později | **beze změny proti dnešku**: trigger, 1080 m/s, prolétává (~6 % zásahů, [#14](../decisions.md)). Stun s „kamenným" vzhledem, **zatím žlutý** |
+| **Šedý** (stun) | kámen — model je pole `GameObject` v Inspectoru, Viktor dodá později | **beze změny proti dnešku**: trigger, 1080 m/s, prolétává (~6 % zásahů, [#14](../../decisions.md)). Stun s „kamenným" vzhledem, **zatím žlutý** |
 | **Modrý** (electric) | elektrický náboj | spolehlivý sweep. Při dopadu **přeskočí výboj na dron, pokud je do `zapRange`**, a omráčí ho; přímý zásah omráčí taky. Na dronu hrají dnešní elektrické výboje |
 | **Červený** (explozivní) | výbušný granát | spolehlivý sweep. Vybuchne o cokoli a **omráčí vše v `blastRadius`** |
 | **Zelený** (homing) | naváděná raketa | spolehlivý sweep. Zásah = stun. Dá se jí uniknout: **omezené `turnRate` (°/s) + `lifeTime`** |
@@ -35,7 +35,7 @@ najednou.**
    `useSweep`, `visualPrefab`; virtuální háčky `OnImpact`, `Steer`, `OnExpire`. Potomci
    `ElectricProjectile`, `ExplosiveProjectile`, `HomingProjectile`. Sweep je stejná technika jako
    u rakety hráče. Výboj modrého je částicový `ElectricZap` — **žádný `LineRenderer`**
-   ([#17](../decisions.md)).
+   ([#17](../../decisions.md)).
 4. **Assety — `TurretTypesBuilder`** — materiály, prefaby projektilů (`enemy_rock`,
    `enemy_electric`, `enemy_explosive`, `enemy_homing`), prefaby turretů
    (`Assets/Prefabs/Turrets/Turret_*`), rozmístění v sandboxu. Vytváří jen chybějící assety, takže

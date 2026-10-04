@@ -34,6 +34,23 @@ Read before changing gameplay behaviour:
   silently.
 - [docs/backlog.md](docs/backlog.md) — open bugs with verified root causes.
 
+**New features go through `docs/plans/` — always, before any code.** The full lifecycle is in
+[docs/plans/README.md](docs/plans/README.md); in short:
+
+1. When Viktor asks for a new feature, first create `docs/plans/<feature>.md` (status *plánováno*:
+   the requirement, what already exists, open questions) and add it to the list in
+   `docs/plans/README.md`.
+2. Write the implementation plan into that same document (section *Plán implementace*) — when a
+   plan is made in plan mode, this is where it ends up, translated into Czech like the rest of
+   `docs/`. Status → *rozpracováno*.
+3. While building, record deviations from the plan in the document (*Odchylky při implementaci*).
+4. When the feature is done: describe it in `docs/features/` (one feature = one document, plus its
+   row in `docs/features/README.md`), log decisions in `docs/decisions.md`, then **move the plan to
+   `docs/plans/archive/`** with status *hotovo* and the commit hash, add it to
+   `docs/plans/archive/README.md`, and remove it from the active list.
+
+`docs/` is written in Czech; follow the markers in [docs/README.md](docs/README.md).
+
 ## Commands
 
 There is no build script, CI, or task runner in this repo. Builds are made from the editor

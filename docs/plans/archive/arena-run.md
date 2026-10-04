@@ -2,13 +2,13 @@
 
 **Plán ze session 04.10.2026.** Stav: **implementováno** (commit `0db0288`). Hraním otestováno
 po vlnu 2; boss, žluté kruhy, Easy restart a obrazovka s výsledkem zatím ne. Hotová podoba je ve
-[features/](../features/) (aréna, vlny, boss, kruhy, obrazovky, obtížnost). Rozhodnutí je
-[#23](../decisions.md).
+[features/](../../features/) (aréna, vlny, boss, kruhy, obrazovky, obtížnost). Rozhodnutí je
+[#23](../../decisions.md).
 
 ## Kontext
 
-Předělání ([#18](../decisions.md)–[#20](../decisions.md),
-[design/game-structure.md](../design/game-structure.md), [design/waves.md](../design/waves.md))
+Předělání ([#18](../../decisions.md)–[#20](../../decisions.md),
+[design/game-structure.md](../../design/game-structure.md), [design/waves.md](../../design/waves.md))
 dělá ze hry run po vlnách v uzavřeném boxu. Menu a prefaby turretů už existovaly, ale New game
 pořád vedl do `SampleScene`. Tenhle plán staví samotný run.
 
@@ -24,7 +24,7 @@ pořád vedl do `SampleScene`. Tenhle plán staví samotný run.
 - **Žluté kruhy:** 3 za vlnu náhodně; každý průlet přidá +1 k příští střele (**stackuje se**);
   posílená raketa bliká žlutě.
 - **Mezi vlnami:** pauza, „Wave N cleared", sloty na karty s „No upgrades yet" a Continue.
-- **Smrt** ([#19](../decisions.md), [#20](../decisions.md)): Easy = restart vlny, stěny a strop jen
+- **Smrt** ([#19](../../decisions.md), [#20](../../decisions.md)): Easy = restart vlny, stěny a strop jen
   omráčí; Normal = konec runu, stěny zabijí. Podlaha a turrety zabíjí na obou.
 - **Obrazovka s výsledkem:** dosažená vlna, nejlepší vlna (uložená), damage ve vlně i za run,
   zničené turrety a záložka Upgrades (placeholder). Tlačítko Main menu.

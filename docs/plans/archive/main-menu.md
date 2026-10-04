@@ -1,13 +1,13 @@
 # Plán: Main menu a Sandbox
 
 **Plán ze session 04.10.2026.** Stav: **implementováno** (commit `0db0288`), otestováno hraním.
-Hotová podoba je v [features/main-menu.md](../features/main-menu.md) a
-[features/sandbox.md](../features/sandbox.md). Rozhodnutí je [#21](../decisions.md).
+Hotová podoba je v [features/main-menu.md](../../features/main-menu.md) a
+[features/sandbox.md](../../features/sandbox.md). Rozhodnutí je [#21](../../decisions.md).
 
 ## Kontext
 
-Rozhodnutí [#18](../decisions.md) mění hru na run po vlnách, který začíná v **hlavním menu**
-([design/game-structure.md](../design/game-structure.md)). Do té doby měl build jedinou scénu
+Rozhodnutí [#18](../../decisions.md) mění hru na run po vlnách, který začíná v **hlavním menu**
+([design/game-structure.md](../../design/game-structure.md)). Do té doby měl build jedinou scénu
 (`SampleScene`) a hra startovala rovnou do letu. Tohle byl první kus předělání: samotné menu a scéna
 `Sandbox`, aby tlačítko Sandbox mělo kam vést.
 

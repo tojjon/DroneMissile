@@ -11,8 +11,8 @@ Dělicí linka, ať se to nerozjede:
 | `CLAUDE.md` | jak je to naprogramované, příkazy, pasti v repu | proč jsme to tak chtěli |
 | kód | pravda o implementaci | pravda o záměru |
 | `docs/features/` | co ve hře právě je a jak se to chová | proč (to je `decisions.md`) |
-| `docs/plans/` | co teprve bude: zadání, návrh, otevřené otázky | hotové věci (ty jsou ve `features/`) |
-| `docs/concepts/` | implementační plány, včetně odchylek při stavbě | aktuální stav (ten je ve `features/`) |
+| `docs/plans/` | co teprve bude nebo se právě dělá: zadání, plán implementace, otevřené otázky | hotové věci (ty jsou ve `features/`) |
+| `docs/plans/archive/` | dokončené a uzavřené plány, včetně odchylek při stavbě | aktuální stav (ten je ve `features/`) |
 
 Když se rozejde `docs/` a kód, **`docs/` vyhrává** — to znamená, že kód je pozadu, ne že dokumentace
 je špatná. Jedinou výjimkou jsou bloky označené `[OVĚŘENO]`, které záměrně popisují realitu.
@@ -33,8 +33,8 @@ je špatná. Jedinou výjimkou jsou bloky označené `[OVĚŘENO]`, které zám�
 | [decisions.md](decisions.md) | rozhodovací log — jedno rozhodnutí = jeden záznam, append-only |
 | [backlog.md](backlog.md) | otevřené bugy a nápady, s ověřeným stavem |
 | [features/](features/README.md) | **co ve hře je teď** — jedna featura = jeden dokument, s hodnotami a stavem testování |
-| [plans/](plans/README.md) | **co se dělá nebo je jen naplánované** — upgrady, ESC menu, ukládání, konzole v sandboxu, model kamene |
-| [concepts/](concepts/) | plány, podle kterých se featury stavěly: [main menu](concepts/main-menu.md), [typy turretů](concepts/turret-types.md), [aréna a run](concepts/arena-run.md) |
+| [plans/](plans/README.md) | **co se dělá nebo je jen naplánované** — upgrady, ESC menu, ukládání, konzole v sandboxu, model kamene. Postup od nápadu po hotovou featuru je v [plans/README.md](plans/README.md) |
+| [plans/archive/](plans/archive/README.md) | dokončené a uzavřené plány: [main menu](plans/archive/main-menu.md), [typy turretů](plans/archive/turret-types.md), [aréna a run](plans/archive/arena-run.md) |
 
 ## Značky
 

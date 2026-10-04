@@ -32,4 +32,4 @@ ESC pauza, Continue + ukládání, katalog upgradů, ovládání vysílačkou.
 ## Souvisí
 
 [design/game-structure.md](../design/game-structure.md),
-[concepts/main-menu.md](../concepts/main-menu.md), rozhodnutí [#21](../decisions.md).
+[plans/archive/main-menu.md](../plans/archive/main-menu.md), rozhodnutí [#21](../decisions.md).

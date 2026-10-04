@@ -46,5 +46,5 @@ Další pole: `wallMargin`, `minTurretSpacing`, `minDistanceFromDrone`, `ringsPe
 
 ## Souvisí
 
-[design/waves.md](../design/waves.md), [concepts/arena-run.md](../concepts/arena-run.md),
+[design/waves.md](../design/waves.md), [plans/archive/arena-run.md](../plans/archive/arena-run.md),
 rozhodnutí [#23](../decisions.md).

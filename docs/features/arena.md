@@ -32,5 +32,5 @@ Kryty / překážky uvnitř (zatím záměrně prázdná).
 
 ## Souvisí
 
-[waves.md](waves.md), [concepts/arena-run.md](../concepts/arena-run.md),
+[waves.md](waves.md), [plans/archive/arena-run.md](../plans/archive/arena-run.md),
 rozhodnutí [#20](../decisions.md), [#23](../decisions.md).

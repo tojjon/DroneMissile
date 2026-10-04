@@ -2,7 +2,7 @@
 
 Jedna featura = jeden dokument. Popisují **co ve hře je a jak se to chová teď** — hodnoty,
 kde se ladí, co chybí. *Proč* je to tak, je v [../decisions.md](../decisions.md), *záměr* do
-budoucna v [../design/](../design/), plány, podle kterých se to stavělo, v [../concepts/](../concepts/).
+budoucna v [../design/](../design/), plány, podle kterých se to stavělo, v [../plans/archive/](../plans/archive/).
 
 Každý dokument začíná řádkem **Stav** (hotovo / částečně, otestováno hraním ano / ne).
 
