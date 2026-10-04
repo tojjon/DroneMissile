@@ -1,6 +1,6 @@
 # Konzole upgradů v sandboxu
 
-**Stav:** hotovo — commit `COMMIT`, otestováno hraním 04.10.2026. Hotová featura:
+**Stav:** hotovo — commit `3d9ff72`, otestováno hraním 04.10.2026. Hotová featura:
 [features/sandbox.md](../../features/sandbox.md).
 
 ## Co to má být `[ZADÁNÍ]`
