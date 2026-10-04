@@ -780,3 +780,45 @@ beze změny.
 
 **Kde:** [design/game-structure.md](design/game-structure.md), [design/waves.md](design/waves.md),
 [../CLAUDE.md](../CLAUDE.md)
+
+---
+
+## #24 — Šedý turret střílí jako ostatní; kamera 35° nahoru
+
+**Rozhodnutí:** (1) Šedý turret už nekopíruje původní nepřátelskou raketu: střílí **jednou za 2 s**
+a jeho kameny letí **60 m/s se spolehlivým sweepem** (dřív 5× za sekundu, 1080 m/s, ~6 % zásahů).
+(2) FPV kamera má **35° uptilt** (dřív 25°). `Main Camera` i `FirePoint` dostanou stejnou rotaci,
+takže zaměřovač dál ukazuje přesný bod dopadu ([#12](decisions.md)). Viktor, 04.10.2026.
+
+**Proč:** (1) Viktor chce, aby se šedý hrál stejně jako ostatní tři — kámen má být vidět a dát se
+mu uhnout, ne neviditelná dávka, která trefí náhodou. (2) Úhel podle skutečného dronu; s rychlejší
+fyzikou ([plans/flight-physics.md](plans/flight-physics.md)) se letí víc nakloněný.
+
+**Mění:** [#22](decisions.md) říkal, že šedý zůstává jako dnešní raketa — to už neplatí.
+[#14](decisions.md) (prolétávání při 1080 m/s) platí dál jen pro původní `enemy_rocket.prefab`
+turretu v `SampleScene`. Hodnoty úhlu v [#12](decisions.md) (-25°) jsou zastaralé, princip platí.
+
+**Vylučuje:** naklonit kameru bez `FirePoint` nebo naopak — vždy přes
+`Tools > DroneMissile > Apply Camera Uptilt`.
+
+**Kde:** [features/turret-types.md](features/turret-types.md), [../CLAUDE.md](../CLAUDE.md)
+
+---
+
+## #25 — Hardcore: Normal bez upgradů, mezi vlnami bez pauzy
+
+**Rozhodnutí:** Třetí obtížnost **Hardcore** má pravidla Normalu (smrt končí run, stěny zabíjí)
+a **žádné upgrady**. Mezi vlnami se hra nezastaví — 2 s nápis „WAVE N CLEARED“ a další vlna
+začne sama. Vlastní rekord nejlepší vlny. Viktor, 04.10.2026.
+
+**Proč:** Bez karet nemá pauza mezi vlnami co nabídnout; plynulý přechod drží tlak, o který
+v Hardcore jde.
+
+**Jak:** `GameSession.Difficulty.Hardcore` a `GameSession.UpgradesEnabled`; pravidla, která se liší
+jen na Easy, testují Easy explicitně, takže Hardcore dědí Normal. `RunManager` má stav `Banner`.
+
+**Vylučuje:** jakýkoli upgrade na Hardcore — **budoucí systém karet se musí ptát
+`GameSession.UpgradesEnabled`** ([plans/upgrades.md](plans/upgrades.md)).
+
+**Kde:** [plans/hardcore-mode.md](plans/hardcore-mode.md),
+[features/death-and-difficulty.md](features/death-and-difficulty.md)

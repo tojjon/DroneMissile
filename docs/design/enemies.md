@@ -30,7 +30,7 @@ Výchozí hodnoty — všechny se ladí v Inspectoru na prefabech:
 
 | Typ | Projektil | `speed` | `lifeTime` | `fireRate` | stun | navíc | Zásah |
 |---|---|---|---|---|---|---|---|
-| Šedý | `enemy_rock` | 1080 | 5 s | 0,2 s | 1 s | `visualPrefab` (model kamene) | trigger, prolétává jako dnes ([#14](../decisions.md)) |
+| Šedý | `enemy_rock` | 60 | 6 s | 2 s | 1 s | `visualPrefab` (model kamene) | sweep (od [#24](../decisions.md); dřív trigger a 1080 m/s) |
 | Modrý | `enemy_electric` | 70 | 6 s | 1,5 s | 1 s | `zapRange` 8 m | sweep |
 | Červený | `enemy_explosive` | 50 | 8 s | 2,5 s | 1 s | `blastRadius` 10 m | sweep |
 | Zelený | `enemy_homing` | 40 | 7 s | 3 s | 1 s | `turnRate` 70 °/s | sweep |

@@ -120,11 +120,12 @@ public class MainMenu : MonoBehaviour
         UiKit.NewButton(mainPanel.transform, "Quit", OnQuit, style);
         mainFirst = (cont.interactable ? cont : newGame).gameObject;
 
-        // Difficulty - what each one means is docs/decisions.md #19 and #20.
+        // Difficulty - what each one means is docs/decisions.md #19, #20 and #25.
         difficultyPanel = NewColumn(canvasGo.transform, "DifficultyPanel");
         UiKit.NewLabel(difficultyPanel.transform, "Choose difficulty", style);
         Button easy = UiKit.NewButton(difficultyPanel.transform, "Easy", () => OnStartGame(GameSession.Difficulty.Easy), style);
         UiKit.NewButton(difficultyPanel.transform, "Normal", () => OnStartGame(GameSession.Difficulty.Normal), style);
+        UiKit.NewButton(difficultyPanel.transform, "Hardcore", () => OnStartGame(GameSession.Difficulty.Hardcore), style);
         UiKit.NewButton(difficultyPanel.transform, "Back", () => Show(mainPanel, mainFirst), style);
         difficultyFirst = easy.gameObject;
 

@@ -83,6 +83,7 @@ Obtížnost se volí **při zakládání nové hry** a určuje, co se stane, kdy
 |---|---|
 | **Easy** | **Znovu se načte aktuální vlna.** Run pokračuje — vlna začne od začátku, karty z předchozích vln zůstávají. |
 | **Normal** | **Run končí** → obrazovka s výsledkem (viz níž). |
+| **Hardcore** | Jako Normal, ale **bez upgradů**; mezi vlnami jen 2s nápis místo pauzy ([#25](../decisions.md)). |
 
 Co je smrt, se nemění: dron nemá HP a umírá dotekem pevného objektu ([#10](../decisions.md)).
 
@@ -94,6 +95,7 @@ Náraz do **stěny nebo stropu** arény se liší podle obtížnosti ([rozhodnut
 |---|---|
 | **Easy** | **omráčí** — stejný stun jako nepřátelská střela, dron spadne, pokud ho hráč nevybere |
 | **Normal** | **zabije** — jako jakýkoli jiný dotek pevného objektu |
+| **Hardcore** | **zabije** — jako Normal |
 
 **Podlaha a nepřátelé zabíjí na obou obtížnostech** `[POTVRZENO 03.10.2026]` — jinak by se na
 Easy nedalo umřít vůbec.

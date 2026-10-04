@@ -25,8 +25,8 @@ Tlačítko **Main menu**.
 
 ## Jak se to chová
 
-Hra je pod obrazovkou zastavená. Nejlepší vlna se ukládá do `PlayerPrefs` **zvlášť pro Easy
-a Normal**, takže přežije i vypnutí hry.
+Hra je pod obrazovkou zastavená. Nejlepší vlna se ukládá do `PlayerPrefs` **zvlášť pro Easy,
+Normal a Hardcore**, takže přežije i vypnutí hry.
 
 ## Kde v projektu
 

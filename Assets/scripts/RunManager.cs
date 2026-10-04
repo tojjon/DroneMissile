@@ -13,7 +13,8 @@ using UnityEngine;
 /// </summary>
 public class RunManager : MonoBehaviour
 {
-    public enum State { Playing, Intermission, Ended }
+    // Banner: Hardcore's 2 s "wave cleared" between waves - the game keeps running (#25).
+    public enum State { Playing, Intermission, Banner, Ended }
 
     [System.Serializable]
     public class Wave
@@ -63,6 +64,10 @@ public class RunManager : MonoBehaviour
     [Tooltip("No turret spawns closer than this to the drone.")]
     public float minDistanceFromDrone = 60f;
 
+    [Header("Hardcore")]
+    [Tooltip("Seconds the WAVE CLEARED banner shows before the next wave starts on its own.")]
+    public float hardcoreBannerTime = 2f;
+
     [Header("Yellow Rings")]
     public int ringsPerWave = 3;
     public Material ringMaterial;
@@ -82,6 +87,7 @@ public class RunManager : MonoBehaviour
     private DroneControls drone;
     private Vector3 spawnPos;
     private Quaternion spawnRot;
+    private float nextWaveAt;
 
     void Awake()
     {
@@ -117,11 +123,18 @@ public class RunManager : MonoBehaviour
 
     void Update()
     {
-        if (CurrentState != State.Playing) return;
+        if (CurrentState != State.Playing && CurrentState != State.Banner) return;
 
+        // Death counts during the banner too - the world keeps running on Hardcore.
         if (drone.DeathDelayElapsed)
         {
             OnDeath();
+            return;
+        }
+
+        if (CurrentState == State.Banner)
+        {
+            if (Time.time >= nextWaveAt) StartWave(CurrentWave + 1);
             return;
         }
 
@@ -179,6 +192,14 @@ public class RunManager : MonoBehaviour
         if (CurrentWave >= waves.Length)
         {
             End(true);
+            return;
+        }
+
+        if (GameSession.CurrentDifficulty == GameSession.Difficulty.Hardcore)
+        {
+            // No cards on Hardcore, so no pause either: a short banner, then the next wave.
+            CurrentState = State.Banner;
+            nextWaveAt = Time.time + hardcoreBannerTime;
             return;
         }
 

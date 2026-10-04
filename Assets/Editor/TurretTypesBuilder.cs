@@ -41,12 +41,13 @@ public static class TurretTypesBuilder
         public Vector3 sandboxDir;
     }
 
-    // Starting values - all tunable on the prefabs afterwards. Grey is today's turret unchanged.
+    // Starting values - all tunable on the prefabs afterwards. Since #24 grey fires like the others
+    // (slow, reliable stones) instead of copying the old tunnelling enemy rocket.
     static readonly Spec[] Specs =
     {
         new Spec { kind = Kind.Grey,  projectile = "enemy_rock",
                    body = new Color(0.45f, 0.45f, 0.47f), shot = new Color(0.55f, 0.5f, 0.45f), shotGlow = Color.black,
-                   speed = 1080f, lifeTime = 5f, fireRate = 0.2f, stun = 1f, sandboxDir = Vector3.forward },
+                   speed = 60f, lifeTime = 6f, fireRate = 2f, stun = 1f, sandboxDir = Vector3.forward },
         new Spec { kind = Kind.Blue,  projectile = "enemy_electric",
                    body = new Color(0.15f, 0.35f, 1f), shot = new Color(0.4f, 0.7f, 1f), shotGlow = new Color(0.8f, 1.6f, 4f),
                    speed = 70f, lifeTime = 6f, fireRate = 1.5f, stun = 1f, sandboxDir = Vector3.right },
@@ -180,9 +181,10 @@ public static class TurretTypesBuilder
                 p.useSweep = true;
                 break;
             default:
-                // Grey: today's tunnelling trigger rocket (#14), rock look. visualPrefab stays empty
+                // Grey: slow stones with a reliable sweep (#24), rock look. visualPrefab stays empty
                 // until Viktor's rock model exists.
                 p = root.AddComponent<EnemyProjectile>();
+                p.useSweep = true;
                 break;
         }
         p.speed = s.speed;

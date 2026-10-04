@@ -11,7 +11,9 @@ using UnityEngine;
 /// </summary>
 public static class GameSession
 {
-    public enum Difficulty { Easy, Normal }
+    // Hardcore = Normal's rules without upgrades (docs/plans/hardcore-mode.md). Rules that differ
+    // only on Easy check for Easy explicitly, so Hardcore inherits Normal everywhere else.
+    public enum Difficulty { Easy, Normal, Hardcore }
 
     public const string MainMenuScene = "MainMenu";
 
@@ -22,6 +24,9 @@ public static class GameSession
 
     // Chosen on the New game screen. Read by DroneControls (arena walls) and RunManager (death).
     public static Difficulty CurrentDifficulty = Difficulty.Normal;
+
+    // The card system (docs/plans/upgrades.md) must ask this before offering or granting anything.
+    public static bool UpgradesEnabled => CurrentDifficulty != Difficulty.Hardcore;
 
     // There is no save system yet, so Continue is always greyed out.
     public static bool HasSave => false;

@@ -42,6 +42,9 @@ v menu** (požadavek z [design/game-structure.md](../design/game-structure.md)):
   upgrade, losuje se znovu.
 - **Barva karty** podle rarity.
 
+**Hardcore:** na obtížnosti Hardcore upgrady **nejsou** ([hardcore-mode.md](hardcore-mode.md)).
+Kód karet se musí ptát `GameSession.UpgradesEnabled` a na Hardcore nic nenabízet ani nepřidělovat.
+
 ## Otevřené otázky `[OTEVŘENÉ]`
 
 1. **Jaké upgrady existují?** Kolik v každé raritě? (Viktor dodá postupně.)

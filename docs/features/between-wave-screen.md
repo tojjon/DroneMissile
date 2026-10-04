@@ -11,6 +11,9 @@ Po vyčištění vlny se hra **zastaví** a ukáže panel:
 - **pět slotů na karty** s textem „No upgrades yet" (počet je pole `cardsOffered` na `RunUI`),
 - tlačítko **Continue** → další vlna.
 
+Na **Hardcore** se tahle obrazovka neukazuje: místo ní 2 s nápis „WAVE N CLEARED" a další vlna
+začne sama, bez pauzy ([rozhodnutí #25](../decisions.md)).
+
 Ovládá se myší nebo Enterem. Během pauzy stojí fyzika i střelba; dron po Continue pokračuje tam,
 kde byl.
 

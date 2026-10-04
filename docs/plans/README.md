@@ -24,6 +24,8 @@ Věci, které **se dělají nebo jsou jen naplánované** — zadané, ale nepos
 
 | Plán | Stav | Blokuje to |
 |---|---|---|
+| [Realistická letová fyzika](flight-physics.md) | plánováno, plán hotový — čeká na schválení | Viktorovy rates (jinak výchozí) |
+| [Hardcore mód](hardcore-mode.md) | postaveno, čeká na test | — |
 | [Upgrady a karty](upgrades.md) | plánováno | seznam upgradů (Viktor) |
 | [ESC menu](esc-menu.md) | plánováno | — |
 | [Ukládání a Continue](save-continue.md) | plánováno | nejlépe až po upgradech (ukládají se taky) |

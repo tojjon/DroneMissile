@@ -10,7 +10,7 @@ sloupec tlačítek.
 | Tlačítko | Co dělá |
 |---|---|
 | **Continue** | **zašedlé** — ukládání zatím neexistuje |
-| **New game** | výběr **Easy / Normal** → spustí run v [aréně](arena.md) |
+| **New game** | výběr **Easy / Normal / Hardcore** → spustí run v [aréně](arena.md) |
 | **Sandbox** | načte [sandbox](sandbox.md) |
 | **Upgrades** | katalog upgradů — zatím „No upgrades yet." |
 | **Quit** | ukončí hru (navíc proti zadání) |

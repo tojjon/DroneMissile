@@ -153,10 +153,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8834f11036a42a468e71a09d94128b7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyProjectile
-  speed: 1080
-  lifeTime: 5
+  speed: 60
+  lifeTime: 6
   stunDuration: 1
   stunKind: 0
   owner: {fileID: 0}
-  useSweep: 0
+  useSweep: 1
+  sweepRadius: 0
   visualPrefab: {fileID: 0}

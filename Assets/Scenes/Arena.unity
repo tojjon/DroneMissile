@@ -626,7 +626,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.21643952, y: 0, z: 0, w: 0.97629607}
+  m_LocalRotation: {x: -0.3007058, y: 0, z: 0, w: 0.95371693}
   m_LocalPosition: {x: 0, y: 0.12, z: 0.629}
   m_LocalScale: {x: 1.6306562, y: 1.850461, z: 1.1809136}
   m_ConstrainProportionsScale: 0
@@ -953,7 +953,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 711199478}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.21643952, y: 0, z: 0, w: 0.97629607}
+  m_LocalRotation: {x: -0.3007058, y: 0, z: 0, w: 0.95371693}
   m_LocalPosition: {x: 0, y: 0.06, z: 0.589}
   m_LocalScale: {x: 1.6306562, y: 2.5825922, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1634,6 +1634,7 @@ MonoBehaviour:
   bossBarColor: {r: 0.85, g: 0.1, b: 0.1, a: 1}
   bossBarBackground: {r: 0, g: 0, b: 0, a: 0.6}
   cardColor: {r: 1, g: 1, b: 1, a: 0.08}
+  cardsOffered: 5
 --- !u!4 &1893720499
 Transform:
   m_ObjectHideFlags: 0
@@ -1740,6 +1741,7 @@ MonoBehaviour:
   wallMargin: 20
   minTurretSpacing: 40
   minDistanceFromDrone: 60
+  hardcoreBannerTime: 2
   ringsPerWave: 3
   ringMaterial: {fileID: 2100000, guid: 6b1b3f929eb28effea036be1c99c4c68, type: 2}
   ringMinHeight: 10

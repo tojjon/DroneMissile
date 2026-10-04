@@ -144,7 +144,7 @@ MonoBehaviour:
   barrel: {fileID: 9186073792250462494}
   firePoint: {fileID: 1811044547109736875}
   detectionRange: 360
-  fireRate: 0.2
+  fireRate: 2
   turnSpeed: 720
   maxHealth: 100
 --- !u!65 &5328081366934372222

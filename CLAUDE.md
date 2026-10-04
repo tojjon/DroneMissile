@@ -178,8 +178,9 @@ Only `EnemyTurret` dies in the ordinary sense (`Destroy(gameObject)`). There is 
 
 **Four turret types share `EnemyTurret` and differ by projectile prefab** ([decision
 #22](docs/decisions.md)). `EnemyProjectile` is now a base class and on its own is the **grey**
-turret's shot — identical to the old enemy rocket (trigger only, `useSweep: false`, tunnels at
-1080 m/s per decision #14). `ElectricProjectile` (blue; on impact a particle `ElectricZap` jumps to
+turret's shot. Since [decision #24](docs/decisions.md) the grey turret fires like the others —
+every 2 s, 60 m/s stones with the reliable sweep; only the original `enemy_rocket.prefab` on
+SampleScene's own turret still tunnels at 1080 m/s (#14). `ElectricProjectile` (blue; on impact a particle `ElectricZap` jumps to
 the drone within `zapRange`), `ExplosiveProjectile` (red; `OverlapSphereNonAlloc` stuns within
 `blastRadius`) and `HomingProjectile` (green; `Steer()` rotates toward the drone at `turnRate`) set
 `useSweep: true` and override the virtual hooks `OnImpact`, `Steer` and `OnExpire`. The sweep is the
@@ -311,7 +312,10 @@ table, arena size) and `RunUI`. It also creates `Turret_Boss.prefab` (grey ×3, 
 and `enemy_boss_rock.prefab` (sweep with `sweepRadius` 1.5) only if missing.
 
 - **Death:** with `reloadSceneOnDeath` off, `DroneControls` stays crashed; `RunManager` polls
-  `DeathDelayElapsed`, then Easy → `drone.ResetTo(spawn)` + restart the wave, Normal → end screen.
+  `DeathDelayElapsed`, then Easy → `drone.ResetTo(spawn)` + restart the wave, Normal and Hardcore →
+  end screen. Hardcore ([decision #25](docs/decisions.md)) is Normal without upgrades: rules that
+  differ only on Easy test for Easy explicitly, and a cleared wave goes to `State.Banner` (2 s, no
+  pause) instead of `Intermission`. Future card code must check `GameSession.UpgradesEnabled`.
   `DroneHUD` clears its death message when `HasCrashed` goes false again. On Easy,
   `OnCollisionEnter` stuns instead of crashing when the collider has `ArenaWall` (#20).
 - **Waves:** `RunManager.waves` (Inspector table). Turrets spawn at random floor points and are
@@ -364,9 +368,11 @@ by `stunImmunity` show nothing.
 
 **The crosshair is a static screen-centre cross, and that is exact rather than approximate.**
 `Main Camera` and the player's `FirePoint` are siblings under `Drone` with **bit-identical** local
-rotations (`{-0.21643952, 0, 0, 0.97629607}`, -25° pitch), and the drone root is unrotated — so the
-optical axis and the muzzle axis are parallel to 0.000°, with zero lateral offset. The muzzle sits
-4.15 mm below the optical axis: 0.024° of error at 10 m, less further out. `RocketProjectile` is
+rotations (`{-0.3007058, 0, 0, 0.9537170}`, a 35° uptilt since [decision #24](docs/decisions.md);
+it was 25° before), and the drone root is unrotated — so the optical axis and the muzzle axis are
+parallel to 0.000°, with zero lateral offset. The muzzle sits 3.9 mm above the optical axis: 0.022°
+of error at 10 m, less further out. Change the tilt only with `Tools > DroneMissile > Apply Camera
+Uptilt` (`CameraTiltBuilder.UptiltDegrees`), which sets both transforms to one quaternion. `RocketProjectile` is
 kinematic with gravity off and constant speed, so the shot is a straight ray. Screen centre *is* the
 impact point at every range. Do not "improve" this with a raycast, a world-space marker, or lead
 computation — all three are ruled out by [decision #12](docs/decisions.md). It stops being true only

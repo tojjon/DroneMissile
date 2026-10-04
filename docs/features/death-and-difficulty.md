@@ -10,10 +10,14 @@ stane potom, záleží na tom, kde hráč je a jakou obtížnost zvolil v menu.
 
 ## Obtížnost (volí se při New game)
 
-| | Easy | Normal |
-|---|---|---|
-| **Pád** (podlaha, turret) | vlna se **restartuje** — dron zpět na spawn, turrety a kruhy znovu, statistiky runu zůstávají | **konec runu** → [obrazovka s výsledkem](end-screen.md) |
-| **Stěna nebo strop arény** | jen **omráčí** (1 s) | zabije |
+| | Easy | Normal | Hardcore |
+|---|---|---|---|
+| **Pád** (podlaha, turret) | vlna se **restartuje** — dron zpět na spawn, turrety a kruhy znovu, statistiky runu zůstávají | **konec runu** → [obrazovka s výsledkem](end-screen.md) | konec runu |
+| **Stěna nebo strop arény** | jen **omráčí** (1 s) | zabije | zabije |
+| **Upgrady** | ano | ano | **žádné** |
+| **Mezi vlnami** | pauza s kartami | pauza s kartami | jen **2s nápis**, další vlna začne sama |
+
+**Hardcore** je Normal bez upgradů ([rozhodnutí #25](../decisions.md)); hraním zatím netestovaný.
 
 Po pádu se na 1 s ukáže „YOU DIED" (`deathDelay`), teprve potom se stane restart nebo konec.
 

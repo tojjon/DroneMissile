@@ -40,6 +40,8 @@ public class RunUI : MonoBehaviour
     private Text intermissionStats;
     private GameObject continueButton;
 
+    private Text banner;
+
     private GameObject endScreen;
     private Text endTitle;
     private Text endStats;
@@ -89,6 +91,8 @@ public class RunUI : MonoBehaviour
     {
         shown = state;
         intermission.SetActive(state == RunManager.State.Intermission);
+        banner.gameObject.SetActive(state == RunManager.State.Banner);
+        if (state == RunManager.State.Banner) banner.text = "WAVE " + run.CurrentWave + " CLEARED";
         endScreen.SetActive(state == RunManager.State.Ended);
         currentFirst = null;
 
@@ -111,6 +115,7 @@ public class RunUI : MonoBehaviour
                 "Damage last wave:  " + GameSession.DamageThisWave + "\n" +
                 "Damage total:  " + GameSession.DamageTotal + "\n" +
                 "Turrets destroyed:  " + GameSession.TurretsDestroyed;
+            endUpgrades.text = GameSession.UpgradesEnabled ? "No upgrades picked." : "Hardcore - no upgrades.";
             ShowTab(true);
             currentFirst = menuButton;
         }
@@ -141,6 +146,7 @@ public class RunUI : MonoBehaviour
         bonusText = Corner(root, "Bonus", new Vector2(40f, -80f), bonusColor);
 
         BuildBossBar(root);
+        BuildBanner(root);
         BuildIntermission(root);
         BuildEndScreen(root);
     }
@@ -185,6 +191,20 @@ public class RunUI : MonoBehaviour
         lrt.offsetMin = lrt.offsetMax = Vector2.zero;
 
         bossBar.SetActive(false);
+    }
+
+    // Hardcore's between-wave message: no panel, no buttons - play goes on underneath.
+    void BuildBanner(Transform parent)
+    {
+        banner = UiKit.NewText(parent, "Banner", "", style.titleFontSize, style.titleColor, style.font);
+        banner.fontStyle = FontStyle.Bold;
+        banner.alignment = TextAnchor.MiddleCenter;
+        RectTransform rt = banner.rectTransform;
+        rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = new Vector2(0f, 200f);
+        rt.sizeDelta = new Vector2(1400f, style.titleFontSize * 1.4f);
+        banner.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.8f);
+        banner.gameObject.SetActive(false);
     }
 
     void BuildIntermission(Transform parent)
