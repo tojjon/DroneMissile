@@ -8,7 +8,7 @@ Po vyčištění vlny se hra **zastaví** a ukáže panel:
 
 - titulek **„WAVE N CLEARED"**,
 - damage v této vlně, damage za celý run, počet zničených turretů,
-- **tři sloty na karty** s textem „No upgrades yet",
+- **pět slotů na karty** s textem „No upgrades yet" (počet je pole `cardsOffered` na `RunUI`),
 - tlačítko **Continue** → další vlna.
 
 Ovládá se myší nebo Enterem. Během pauzy stojí fyzika i střelba; dron po Continue pokračuje tam,

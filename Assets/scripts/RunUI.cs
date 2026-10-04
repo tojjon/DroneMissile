@@ -6,7 +6,7 @@ using UnityEngine.UI;
 /// The run's screens, polled from RunManager (docs/design/game-structure.md, waves.md):
 /// - always: WAVE n / total, and NEXT SHOT +k while a yellow-ring bonus is pending;
 /// - boss wave: the boss's health bar across the top of the screen (the exception to #13);
-/// - between waves: "Wave N cleared", the wave's stats, three card slots (no upgrades exist yet,
+/// - between waves: "Wave N cleared", the wave's stats, five card slots (no upgrades exist yet,
 ///   so they say so) and Continue;
 /// - end of run: RUN OVER / VICTORY with Stats and Upgrades tabs and a Main menu button.
 ///
@@ -22,6 +22,9 @@ public class RunUI : MonoBehaviour
     public Color bossBarColor = new Color(0.85f, 0.1f, 0.1f, 1f);
     public Color bossBarBackground = new Color(0f, 0f, 0f, 0.6f);
     public Color cardColor = new Color(1f, 1f, 1f, 0.08f);
+
+    [Tooltip("Cards offered after each wave - 5 per the spec (docs/design/game-structure.md).")]
+    public int cardsOffered = 5;
 
     private RunManager run;
     private Shoting gun;
@@ -186,8 +189,8 @@ public class RunUI : MonoBehaviour
 
     void BuildIntermission(Transform parent)
     {
-        intermission = CentrePanel(parent, "Intermission", new Vector2(1100f, 720f));
-        Transform col = PanelColumn(intermission.transform, 1000f);
+        intermission = CentrePanel(parent, "Intermission", new Vector2(1500f, 720f));
+        Transform col = PanelColumn(intermission.transform, 1400f);
 
         intermissionTitle = Heading(col, "");
         intermissionStats = Body(col, 150f);
@@ -195,18 +198,18 @@ public class RunUI : MonoBehaviour
         // Card slots. The card system plugs in here once upgrades exist (game-structure.md, q. 2).
         GameObject row = new GameObject("Cards", typeof(RectTransform), typeof(HorizontalLayoutGroup));
         row.transform.SetParent(col, false);
-        row.GetComponent<RectTransform>().sizeDelta = new Vector2(1000f, 240f);
+        row.GetComponent<RectTransform>().sizeDelta = new Vector2(1400f, 240f);
         HorizontalLayoutGroup h = row.GetComponent<HorizontalLayoutGroup>();
-        h.spacing = 30f;
+        h.spacing = 24f;
         h.childAlignment = TextAnchor.MiddleCenter;
         h.childControlWidth = h.childControlHeight = false;
         h.childForceExpandWidth = h.childForceExpandHeight = false;
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < cardsOffered; i++)
         {
             Image card = UiKit.NewRect<Image>(row.transform, "Card");
             card.color = cardColor;
             card.raycastTarget = false;
-            card.rectTransform.sizeDelta = new Vector2(280f, 220f);
+            card.rectTransform.sizeDelta = new Vector2(250f, 220f);
             Text t = UiKit.NewText(card.transform, "Text", "No upgrades yet", 26, style.disabledTextColor, style.font);
             t.alignment = TextAnchor.MiddleCenter;
             RectTransform trt = t.rectTransform;

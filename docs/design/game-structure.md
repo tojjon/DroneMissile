@@ -20,7 +20,7 @@ Main menu ──► New game / Continue
 ```
 
 **Stav `[OVĚŘENO 04.10.2026]`:** běží ve scéně `Arena` — box **300 × 300 m, 80 m vysoký, prázdný**,
-vlny podle [waves.md](waves.md), mezi vlnami pauza s obrazovkou „Wave N cleared" (tři prázdné sloty
+vlny podle [waves.md](waves.md), mezi vlnami pauza s obrazovkou „Wave N cleared" (pět prázdných slotů
 na karty, „No upgrades yet", Continue). Viz [rozhodnutí #23](../decisions.md).
 
 1. **Hraje se ve velkém uzavřeném boxu** — aréna se stěnami a stropem, ne otevřený terén.
