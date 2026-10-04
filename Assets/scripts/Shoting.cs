@@ -10,7 +10,15 @@ public class Shoting : MonoBehaviour
 
     private Joystick transmitter;
     private float nextFireTime = 0f;
-    private bool wasPressed = false;
+
+    // Ring bonus for the next shot, stacking: each yellow ring adds 1 (docs/design/waves.md).
+    private int pendingBonus;
+    public int PendingBonus => pendingBonus;
+
+    public void AddBonus(int amount)
+    {
+        pendingBonus += amount;
+    }
 
     void Start()
     {
@@ -32,6 +40,10 @@ public class Shoting : MonoBehaviour
 
     void Update()
     {
+        // Paused (between-wave screen, end screen): Time.time stands still, so the cooldown would
+        // let exactly one rocket out into the frozen world.
+        if (Time.timeScale == 0f) return;
+
         bool triggerPressed = false;
 
         // Transmitter trigger
@@ -65,6 +77,11 @@ public class Shoting : MonoBehaviour
         // drone root, which is exactly the hierarchy the rocket must ignore - it spawns partly
         // inside the drone's own collider.
         RocketProjectile proj = rocket.GetComponent<RocketProjectile>();
-        if (proj != null) proj.owner = transform;
+        if (proj != null)
+        {
+            proj.owner = transform;
+            proj.damage += pendingBonus;  // spent on this one shot, boosted rockets blink
+            pendingBonus = 0;
+        }
     }
 }

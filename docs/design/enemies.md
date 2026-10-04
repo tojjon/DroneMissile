@@ -18,21 +18,46 @@ vlnách se objevují podle [waves.md](waves.md) a boss je přivolává barevným
 Důsledek: dnešní stun efekt se rozdělí. Šedý turret si nechá stun, ale s novým, kamenným vizuálem;
 elektrické výboje patří modrému.
 
+### Implementace `[OVĚŘENO 04.10.2026]`
+
+Všechny čtyři typy existují jako prefaby `Assets/Prefabs/Turrets/Turret_{Grey,Blue,Red,Green}`,
+každý s vlastním projektilem v `Assets/3D models/` ([rozhodnutí #22](../decisions.md)). Ve scéně
+`Sandbox` stojí po jednom **600 m od plošiny** do čtyř světových stran — dál, než je dosah turretu
+(360 m), takže na hráče nikdy nestřílí víc než jeden najednou. `SampleScene` má dál jen svůj
+původní turret.
+
+Výchozí hodnoty — všechny se ladí v Inspectoru na prefabech:
+
+| Typ | Projektil | `speed` | `lifeTime` | `fireRate` | stun | navíc | Zásah |
+|---|---|---|---|---|---|---|---|
+| Šedý | `enemy_rock` | 1080 | 5 s | 0,2 s | 1 s | `visualPrefab` (model kamene) | trigger, prolétává jako dnes ([#14](../decisions.md)) |
+| Modrý | `enemy_electric` | 70 | 6 s | 1,5 s | 1 s | `zapRange` 8 m | sweep |
+| Červený | `enemy_explosive` | 50 | 8 s | 2,5 s | 1 s | `blastRadius` 10 m | sweep |
+| Zelený | `enemy_homing` | 40 | 7 s | 3 s | 1 s | `turnRate` 70 °/s | sweep |
+
+Ostatní parametry turretu (`detectionRange` 360, `turnSpeed` 720, `maxHealth` 100) jsou u všech
+stejné, převzaté z dnešního turretu.
+
+Stun má dva vzhledy: **Rock** (žluté úlomky padající kolem dronu — šedý, červený, zelený) a
+**Electric** (dnešní výboje — modrý). Který vzhled typ spustí, je pole `stunKind` na projektilu.
+Červený rám HUD svítí u všech.
+
 ### Otevřené otázky k typům `[OTEVŘENÉ]`
 
 1. ~~**Zelený — letí za hráčem střela, nebo celý turret?**~~ **ZODPOVĚZENO 03.10.2026** —
    **naváděná raketa**, turret stojí na místě.
-2. **Modrý — co výboj dělá a kam míří?** Zasáhne hráče, jen když je blízko místa dopadu? Na jakou
-   vzdálenost? Omráčí, jako to dělá dnešní stun? A co když střela trefí přímo dron?
+2. ~~**Modrý — co výboj dělá a kam míří?**~~ **ZODPOVĚZENO 04.10.2026** — z místa dopadu
+   **přeskočí na dron, pokud je do `zapRange`** (pole v Inspectoru), a omráčí ho s elektrickým
+   efektem. Přímý zásah omráčí taky.
 3. ~~**Červený — co výbuch udělá dronu?**~~ **ZODPOVĚZENO 03.10.2026** — **omráčí**, stejně jako
    šedý, ale **v poloměru**, takže je silnější. **Poloměr je pole v Inspectoru** — Viktor si ho
    chce ladit hraním, takže pevná hodnota se nenavrhuje. Zbývá: je stun stejně dlouhý jako u šedého?
 4. **Šedý — „kamenný vibe" stunu.** Jak má vypadat: prach, úlomky, otřes kamery? A znamená „teďka
    žlutá", že žlutá je dočasná barva, která se nahradí?
-5. **Jsou typy jinak odolné nebo rychlé?** HP, `fireRate`, `turnSpeed` a rychlost projektilu —
-   stejné pro všechny barvy, nebo každý typ jinak?
-6. **Pilíř „vše je uhýbatelné"** ([concept.md](../concept.md)). Naváděná střela se mu nevylučuje,
-   ale musí být jasné, jak se jí uhýbá — omezená zatáčivost, omezená doba letu?
+5. ~~**Jsou typy jinak odolné nebo rychlé?**~~ **ČÁSTEČNĚ 04.10.2026** — rychlost projektilu a
+   `fireRate` se liší (tabulka výš), HP a `turnSpeed` zatím ne. Všechno je na prefabech k ladění.
+6. ~~**Pilíř „vše je uhýbatelné"**~~ **ZODPOVĚZENO 04.10.2026** — naváděná raketa zatáčí jen
+   `turnRate` °/s a po `lifeTime` vyhoří, takže ostrý manévr nebo útěk jí uteče.
 
 ## Turret — herní požadavky `[ZADÁNÍ]`
 

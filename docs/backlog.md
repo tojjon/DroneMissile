@@ -130,7 +130,9 @@ zhruba 59 % zásahů. Opraveno v obou dokumentech, detekce převedena na sweep t
 Poučení, ne úkol: **prefab je autoritativní, dokumentace ne** ([rozhodnutí #14](decisions.md)). Když
 se v docs objeví konkrétní číslo z prefabu nebo scény, patří k němu ověření, ne důvěra.
 
-### Damage rakety hráče je hardcoded
+### ~~Damage rakety hráče je hardcoded~~
+
+**VYŘEŠENO 04.10.2026** — `RocketProjectile.damage` (10) je pole; žluté kruhy ho přes `Shoting` zvedají pro příští střelu. Viz [rozhodnutí #23](decisions.md).
 
 `RocketProjectile.OnTriggerEnter` volá `turret.TakeDamage(10)` — číslo je zadrátované v místě
 volání. `[AKTUALIZOVÁNO 04.09.2026]` Protějšek `EnemyProjectile.damage` už neexistuje (dron nemá HP,

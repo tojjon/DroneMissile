@@ -5,6 +5,10 @@ using UnityEngine.SceneManagement;
 
 public class DroneControls : MonoBehaviour
 {
+    // Which look a stun gets. The HUD border shows for every kind; each DroneStunArcs instance plays
+    // only for its own kind. Chosen per projectile prefab - see docs/decisions.md #22.
+    public enum StunKind { Rock, Electric }
+
     public float throttleForce = 15f;
     public float pitchSpeed = 100f;
     public float rollSpeed = 100f;
@@ -23,6 +27,12 @@ public class DroneControls : MonoBehaviour
 
     [Tooltip("How long the death message stays up before the scene reloads. Physics keeps running.")]
     public float deathDelay = 1f;
+
+    [Tooltip("Off in the Arena: there RunManager decides what death means (restart the wave on Easy, end screen on Normal) and the scene must not reload under it. See docs/decisions.md #23.")]
+    public bool reloadSceneOnDeath = true;
+
+    [Tooltip("Easy only: hitting an ArenaWall (walls, ceiling) stuns this long instead of killing. See docs/decisions.md #20.")]
+    public float wallStun = 1f;
 
     [Header("Stun")]
     [Tooltip("How long the drone cannot be stunned again after a stun ends.")]
@@ -46,6 +56,13 @@ public class DroneControls : MonoBehaviour
     // Crash() may ever set it.
     public bool IsStunned => !hasCrashed && Time.time < stunnedUntil;
     public bool HasCrashed => hasCrashed;
+
+    // True once the death message has had its beat. RunManager waits for this before acting, so the
+    // arena keeps the same rhythm as the reload path.
+    public bool DeathDelayElapsed => hasCrashed && Time.time >= reloadAt;
+
+    // Kind of the stun currently running (or the last one). Only meaningful while IsStunned.
+    public StunKind LastStunKind { get; private set; }
 
     void Awake()
     {
@@ -111,7 +128,7 @@ public class DroneControls : MonoBehaviour
         // check sits below this return, and Stun() bails on hasCrashed.
         if (hasCrashed)
         {
-            if (Time.time >= reloadAt) SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            if (reloadSceneOnDeath && Time.time >= reloadAt) SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             return;
         }
 
@@ -187,13 +204,45 @@ public class DroneControls : MonoBehaviour
     // see decisions.md #10. Projectiles never reach this: both are trigger colliders.
     void OnCollisionEnter(Collision collision)
     {
-        if (armed && !hasCrashed) Crash();
+        if (!armed || hasCrashed) return;
+
+        // Arena walls and ceiling only stun on Easy (docs/decisions.md #20); the floor and turrets
+        // carry no ArenaWall, so they still kill on both difficulties. A marker component rather than
+        // a tag - tags are a silent contract here (docs/reference/unity-gotchas.md).
+        if (GameSession.CurrentDifficulty == GameSession.Difficulty.Easy &&
+            collision.collider.GetComponent<ArenaWall>() != null)
+        {
+            Stun(wallStun, StunKind.Rock);
+            return;
+        }
+
+        Crash();
     }
 
-    // Takes control away for `seconds`. Called by EnemyProjectile on a hit.
-    public void Stun(float seconds)
+    // Easy restarts a wave without reloading the scene: put the drone back on its spawn as if it had
+    // just been loaded. The arming latch re-arms from the new height, exactly like a fresh scene.
+    public void ResetTo(Vector3 position, Quaternion rotation)
+    {
+        hasCrashed = false;
+        armed = false;
+        stunnedUntil = 0f;
+        stunnableAgainAt = 0f;
+
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+        rb.position = position;
+        rb.rotation = rotation;
+        transform.SetPositionAndRotation(position, rotation);
+        spawnY = position.y;
+    }
+
+    // Takes control away for `seconds`. Called by EnemyProjectile (and its subclasses) on a hit.
+    public void Stun(float seconds, StunKind kind)
     {
         if (hasCrashed || Time.time < stunnableAgainAt) return;
+
+        // Set only past the i-frame check, so a rejected hit cannot repaint a stun already running.
+        LastStunKind = kind;
 
         // A deadline, not a countdown: Stun() runs inside the physics step, so a value decremented
         // in FixedUpdate would gain or lose a whole step depending on ordering. Mathf.Max so a short

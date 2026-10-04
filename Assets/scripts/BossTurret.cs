@@ -1,0 +1,96 @@
+using UnityEngine;
+
+/// <summary>
+/// The wave-10 boss's extra behaviour, next to its EnemyTurret (docs/design/waves.md). From half
+/// health it lobs a volley of coloured balls into the air, then another every `volleyInterval`
+/// seconds while it lives; each ball spawns a turret of its colour where it lands. Polls
+/// EnemyTurret.HealthFraction like the health bars do - no event bus.
+///
+/// Its health bar is on screen (RunUI), not above it - the exception to docs/decisions.md #13.
+/// </summary>
+[RequireComponent(typeof(EnemyTurret))]
+public class BossTurret : MonoBehaviour
+{
+    [Header("Colour Balls")]
+    [Tooltip("Balls per volley.")]
+    public int ballCount = 6;
+
+    [Tooltip("Seconds between volleys once the first has gone.")]
+    public float volleyInterval = 25f;
+
+    [Range(0f, 1f)]
+    [Tooltip("Health fraction at which the first volley goes.")]
+    public float triggerFraction = 0.5f;
+
+    public float launchSpeed = 35f;
+
+    [Tooltip("Max tilt from straight up, in degrees. Wider spreads the turrets further.")]
+    public float spreadAngle = 40f;
+
+    [Tooltip("Turrets a ball can spawn, one picked at random per ball. Grey, blue, red, green.")]
+    public GameObject[] turretPrefabs;
+
+    [Tooltip("Ball colour per entry in turretPrefabs, same order.")]
+    public Material[] ballMaterials;
+
+    public float ballSize = 1.5f;
+
+    [Tooltip("Where the balls leave from, above the boss's root.")]
+    public float launchHeight = 8f;
+
+    private EnemyTurret turret;
+    private float nextVolley = float.PositiveInfinity;
+    private bool triggered;
+
+    void Awake()
+    {
+        turret = GetComponent<EnemyTurret>();
+    }
+
+    void Update()
+    {
+        if (!triggered && turret.HealthFraction <= triggerFraction)
+        {
+            triggered = true;
+            nextVolley = Time.time;
+        }
+
+        if (Time.time >= nextVolley)
+        {
+            Volley();
+            nextVolley = Time.time + volleyInterval;
+        }
+    }
+
+    void Volley()
+    {
+        if (turretPrefabs == null || turretPrefabs.Length == 0) return;
+
+        Vector3 origin = transform.position + Vector3.up * launchHeight;
+        for (int i = 0; i < ballCount; i++)
+        {
+            int kind = Random.Range(0, turretPrefabs.Length);
+
+            // Evenly round the compass, tilted a random amount off vertical, so balls spread out
+            // instead of piling onto one spot.
+            float yaw = (i + Random.value * 0.5f) * 360f / ballCount;
+            float tilt = Random.Range(spreadAngle * 0.4f, spreadAngle);
+            Vector3 dir = Quaternion.Euler(0f, yaw, 0f) * Quaternion.Euler(tilt, 0f, 0f) * Vector3.up;
+
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            Destroy(go.GetComponent<Collider>());   // see ColorBall - nothing may collide with it
+            go.name = "ColorBall";
+            go.transform.position = origin;
+            go.transform.localScale = Vector3.one * ballSize;
+            if (ballMaterials != null && kind < ballMaterials.Length && ballMaterials[kind] != null)
+            {
+                go.GetComponent<Renderer>().sharedMaterial = ballMaterials[kind];
+            }
+
+            ColorBall ball = go.AddComponent<ColorBall>();
+            ball.turretPrefab = turretPrefabs[kind];
+            ball.owner = transform;
+            ball.velocity = dir * launchSpeed;
+        }
+    }
+}

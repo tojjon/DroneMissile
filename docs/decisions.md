@@ -689,3 +689,94 @@ teď neplatí pro stěny a strop arény; podlaha a nepřátelé zabíjí dál na
 
 **Doplnění 03.10.2026:** Viktor potvrdil, že podlaha a nepřátelé na Easy dál zabíjí — jinak by se
 na Easy nedalo umřít vůbec.
+
+---
+
+## #21 — Main menu: vlastní scéna, UI v kódu, ale s inputem
+
+**Rozhodnutí:** Hra startuje do scény `MainMenu`. Menu i `Sandbox` jsou **kopie `SampleScene`**
+vyrobené editorovým builderem (`Tools > DroneMissile > Build All Menu Scenes`), ne ručně skládané
+scény. Menu z kopie odstraní hratelnost (HUD, ovládání dronu, tag `Player`) a nechá kameru kroužit
+kolem dronu jako pozadí. UI se staví v kódu jako HUD ([#12](decisions.md)) — legacy `Text`, bez
+TextMeshPro — ale **bere input**: má `EventSystem` s `InputSystemUIInputModule` a
+`GraphicRaycaster`. Názvy scén a zvolená obtížnost žijí ve statické třídě `GameSession`.
+Dohodnuto s Viktorem 04.10.2026.
+
+**Proč:** [#12](decisions.md) a [#13](decisions.md) vylučují `EventSystem` a `GraphicRaycaster`
+proto, že HUD a health bar **jen zobrazují**. Menu se kliká a projíždí šipkami, takže tenhle důvod
+na něj neplatí. Projekt jede jen na novém Input Systemu, takže legacy `StandaloneInputModule`
+nejde. Kopie scény přes `AssetDatabase.CopyAsset` drží platné všechny GUID reference a nic se
+needituje jako YAML.
+
+**Vylučuje:**
+
+- `EventSystem` / `GraphicRaycaster` v HUD a v health baru — #12 a #13 platí dál.
+- TextMeshPro i v menu — stejný důvod jako u #12.
+- Ruční úpravy `MainMenu.unity` a `Sandbox.unity`, které by se měly zachovat — builder je při
+  dalším spuštění přepíše. Co má v menu zůstat, patří do builderu nebo do `MainMenu.cs`.
+
+**Cena:** Kopie jsou snapshoty — změny v `SampleScene` se do menu ani sandboxu nepropíšou, dokud
+se builder nespustí znovu. `ReturnToMenu` (Esc → menu) je **dočasná** berlička, dokud nevznikne
+ESC menu; pak se smaže.
+
+**Kde:** [design/game-structure.md](design/game-structure.md), [../CLAUDE.md](../CLAUDE.md)
+
+---
+
+## #22 — Typy turretů se liší projektilem; tři nové projektily mají sweep, šedý ne
+
+**Rozhodnutí:** Čtyři barevné typy turretů ([design/enemies.md](design/enemies.md)) sdílí jeden
+`EnemyTurret` a liší se **prefabem projektilu** a barvou. `EnemyProjectile` je základ (šedý turret)
+a `ElectricProjectile`, `ExplosiveProjectile` a `HomingProjectile` z něj dědí. **Šedý zůstává
+přesně jako dnešní nepřátelská raketa** — trigger, 1080 m/s, prolétává ([#14](decisions.md)).
+**Modrý, červený a zelený používají sweep** (stejná technika jako raketa hráče, [#17](decisions.md))
+a jsou pomalejší. Stun má druh (`StunKind`: Rock / Electric), který vybírá efekt na dronu: dron nese
+dvě instance `DroneStunArcs`, jednu na druh. Výboj modrého je částicový `ElectricZap`. Dohodnuto
+s Viktorem 04.10.2026.
+
+**Proč:** Naváděná raketa ani výbuch při dopadu nefungují, když projektil prolétává zemí i dronem —
+výbuch by se nikdy nespustil. Šedý ale nechává dnešní vyladěný pocit ze hry tak, jak je. Druh stunu
+na projektilu místo na turretu, protože o vzhledu rozhoduje to, co trefilo.
+
+**Vylučuje:**
+
+- `LineRenderer` pro výboj modrého — [#17](decisions.md) platí i tady.
+- Sweep na šedém projektilu, dokud se nerozhodne o spolehlivých zásazích (otázka 7 v
+  [design/enemies.md](design/enemies.md)).
+- Ruční úpravy vygenerovaných prefabů jako jediné místo pravdy pro *strukturu* — struktura je
+  v `TurretTypesBuilder`. **Ladění hodnot** na prefabech je v pořádku: builder existující assety
+  nepřepisuje.
+
+**Cena:** Sandbox turrety stojí 600 m od plošiny, aby nestřílely najednou, takže se k nim musí
+doletět. `SampleScene` dál používá `enemy_rocket.prefab` a svůj původní turret, ne prefab.
+
+**Kde:** [design/enemies.md](design/enemies.md), [../CLAUDE.md](../CLAUDE.md)
+
+---
+
+## #23 — Run v Aréně: RunManager vlastní smrt, stěny jsou komponenta, ne tag
+
+**Rozhodnutí:** New game načítá scénu `Arena` (kopie `SampleScene` bez terénu, s boxem 300 × 300 ×
+80 m). Vlny, spawn, kruhy, konec vlny i run řídí `RunManager`, obrazovky `RunUI`. Dron v Aréně má
+`reloadSceneOnDeath` vypnuté — **scéna se při smrti nenačítá znovu**; `RunManager` čeká na
+`DeathDelayElapsed` a podle obtížnosti buď dron vrátí na spawn (`ResetTo`) a pustí vlnu znovu (Easy),
+nebo ukončí run (Normal). Stěny a strop nesou prázdnou komponentu `ArenaWall`, podlaha ne. Damage
+rakety je pole `RocketProjectile.damage`, žluté kruhy ho zvedají přes `Shoting.AddBonus`. Menu a run
+sdílí stavebnici `UiKit`. Dohodnuto s Viktorem 04.10.2026.
+
+**Proč:** [#19](decisions.md) chce, aby Easy vrátil jen vlnu a karty zůstaly — restart scény by
+smazal celý run. Komponenta místo tagu, protože tagy jsou tichý kontrakt
+([reference/unity-gotchas.md](reference/unity-gotchas.md)); chybějící komponenta je vidět
+v Inspectoru. Mimo Arénu (SampleScene, Sandbox) se chování nemění — [#10](decisions.md) tam platí
+beze změny.
+
+**Vylučuje:**
+
+- `SceneManager.LoadScene` jako následek smrti v Aréně.
+- Collidery na obručích žlutých kruhů — dotek okraje by zabil dron. Průlet detekuje jen trigger.
+- Detonaci projektilů o triggery (kruhy, jiné projektily) — `OnTriggerEnter` je teď ignoruje,
+  stejně jako sweep (`QueryTriggerInteraction.Ignore`).
+- Pruh HP bosse ve world space — boss je výjimka z [#13](decisions.md), pruh je v `RunUI`.
+
+**Kde:** [design/game-structure.md](design/game-structure.md), [design/waves.md](design/waves.md),
+[../CLAUDE.md](../CLAUDE.md)

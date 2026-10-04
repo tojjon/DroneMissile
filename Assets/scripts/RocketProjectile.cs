@@ -5,6 +5,14 @@ public class RocketProjectile : MonoBehaviour
     public float speed = 30f;
     public float lifeTime = 5f;
 
+    [Tooltip("Damage to a turret. Shoting raises it above 10 for the shot after flying through yellow rings.")]
+    public int damage = 10;
+
+    [Header("Boosted Blink")]
+    [Tooltip("A rocket carrying a ring bonus (damage above 10) blinks this colour. HDR so it blooms.")]
+    public Color boostColor = new Color(4f, 3.2f, 0.3f, 1f);
+    public float blinkRate = 12f;
+
     [Tooltip("The object that fired this rocket. Set by Shoting.Fire() right after Instantiate.")]
     public Transform owner;
 
@@ -22,6 +30,8 @@ public class RocketProjectile : MonoBehaviour
     public float impactBackOffset = 0.15f;
 
     private Rigidbody rb;
+    private Renderer body;
+    private MaterialPropertyBlock blink;
 
     // Shared across every rocket in flight: FixedUpdate runs one sweep at a time and reads the
     // results before the next call, so there is nothing to keep per-instance. Static keeps the
@@ -57,6 +67,27 @@ public class RocketProjectile : MonoBehaviour
         {
             Debug.LogWarning("RocketProjectile: owner not set - the rocket will destroy itself on its own shooter.");
         }
+
+        if (damage > 10)
+        {
+            body = GetComponent<Renderer>();
+            blink = new MaterialPropertyBlock();
+        }
+    }
+
+    // Boosted rockets only. A property block, so no material is instantiated per rocket.
+    void Update()
+    {
+        if (blink == null || body == null) return;
+
+        bool on = Mathf.Repeat(Time.time * blinkRate, 1f) < 0.5f;
+        blink.Clear();
+        if (on)
+        {
+            blink.SetColor("_BaseColor", boostColor);
+            blink.SetColor("_EmissionColor", boostColor);
+        }
+        body.SetPropertyBlock(blink);
     }
 
     void FixedUpdate()
@@ -121,6 +152,10 @@ public class RocketProjectile : MonoBehaviour
         if (consumed) return;
         if (owner != null && other.transform.IsChildOf(owner)) return;
 
+        // Triggers are other projectiles and yellow ring gates - never something to detonate on.
+        // Same rule as the sweep's QueryTriggerInteraction.Ignore.
+        if (other.isTrigger) return;
+
         HandleHit(other, transform.position, -transform.forward);
     }
 
@@ -139,7 +174,7 @@ public class RocketProjectile : MonoBehaviour
         EnemyTurret turret = other.GetComponentInParent<EnemyTurret>();
         if (turret != null)
         {
-            turret.TakeDamage(10);
+            turret.TakeDamage(damage);
         }
 
         Destroy(gameObject);

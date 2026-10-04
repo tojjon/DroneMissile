@@ -19,6 +19,10 @@ Main menu ──► New game / Continue
                  (každá 10. vlna je boss)
 ```
 
+**Stav `[OVĚŘENO 04.10.2026]`:** běží ve scéně `Arena` — box **300 × 300 m, 80 m vysoký, prázdný**,
+vlny podle [waves.md](waves.md), mezi vlnami pauza s obrazovkou „Wave N cleared" (tři prázdné sloty
+na karty, „No upgrades yet", Continue). Viz [rozhodnutí #23](../decisions.md).
+
 1. **Hraje se ve velkém uzavřeném boxu** — aréna se stěnami a stropem, ne otevřený terén.
 2. **Hra je rozdělená na vlny.** Každá **desátá** vlna je **boss** (10, 20, 30, …).
 3. **Po každé vlně se hra zastaví** a nabídne **5 náhodně vybraných karet** (upgradů). Hráč si
@@ -51,10 +55,24 @@ Hra po spuštění naběhne do hlavního menu:
 | **Sandbox** | Volný svět na zkoušení upgradů — viz níž. |
 | **Upgrades** | Katalog všech upgradů: obrázek a popis, co dělá. |
 
+**Stav `[OVĚŘENO 04.10.2026]`:** menu existuje jako scéna `MainMenu` (první v buildu), za ním
+běží kamera kroužící kolem dronu nad terénem. Ovládá se myší i šipkami + Enter, vysílačkou ne.
+Dočasná omezení, dokud chybí zbytek hry ([rozhodnutí #21](../decisions.md)):
+
+- **Continue** je zašedlé — ukládání neexistuje.
+- **New game** → výběr Easy / Normal → načte dnešní `SampleScene` místo arény. Volba se pamatuje
+  (`GameSession`), ale hra ji zatím nečte — smrt dál načítá scénu na obou obtížnostech.
+- **Upgrades** ukazuje jen „No upgrades yet".
+- **Quit** je navíc oproti zadání.
+- **Esc** ve hře a v sandboxu vrací rovnou do menu — dočasně, než vznikne ESC menu.
+
 ### Sandbox
 
 Otevřený svět bez vln. Po stisku **Enter** se otevře pole, hráč napíše **jméno upgradu** a dron
 ho dostane. Smysl: vyzkoušet si jednotlivé upgrady a jejich kombinace bez nutnosti je vyhrát v runu.
+
+**Stav `[OVĚŘENO 04.10.2026]`:** scéna `Sandbox` je kopie dnešní `SampleScene` (terén, plošina,
+turret na střílení). Pole na jméno upgradu zatím není — upgrady neexistují.
 
 ## Obtížnost a smrt `[ZADÁNÍ]`
 
@@ -91,6 +109,11 @@ Po konci runu na Normal se ukáže souhrn, z něj se jde do main menu. Statistik
 
 Obrazovka má i **záložku s upgrady**: přehled karet, které hráč za run vybral — stejné zobrazení
 jako *Upgrades* v ESC menu, jen pro skončený run.
+
+**Stav `[OVĚŘENO 04.10.2026]`:** obrazovka existuje ve dvou variantách — „RUN OVER" (smrt na
+Normal) a „VICTORY" (po vlně 10). Ukazuje obtížnost, dosaženou vlnu, nejlepší vlnu (s „NEW RECORD!"),
+damage v poslední vlně a za celý run a počet zničených turretů. Záložka Upgrades zatím píše
+„No upgrades picked." Nejlepší vlna se ukládá do `PlayerPrefs` **zvlášť pro každou obtížnost**.
 
 ## Pauza (ESC) `[ZADÁNÍ]`
 
@@ -129,14 +152,15 @@ Ne zadání, ale důsledky, které je dobré mít na očích, než se do toho pu
 3. **Barvy Legendary a Mythic.** Návrh: Legendary oranžová / zlatá, Mythic červená — potvrdit.
 4. **Můžou se karty opakovat?** Ve stejné nabídce, a znovu ten samý upgrade v dalších vlnách
    (stackování)?
-5. **Jak velký je box** a co je uvnitř — rovná podlaha, překážky, kryty?
+5. ~~**Jak velký je box**~~ **ROZHODNUTO 04.10.2026** — 300 × 300 m, 80 m vysoký, prázdný.
+   Kryty se můžou přidat později.
 6. **Kdy se Continue ukládá?** Po každé vlně (po výběru karty), nebo kdykoli?
-7. **Sandbox: jaký svět?** Dnešní terén z `SampleScene`, nebo nová mapa? Jsou v něm nepřátelé
-   na zkoušení? A jak se upgrade odebírá?
-8. **Ovládání menu vysílačkou.** Menu jde přirozeně myší/klávesnicí — má jít projet i vysílačkou?
+7. ~~**Sandbox: jaký svět?**~~ **ROZHODNUTO 04.10.2026** — kopie dnešního terénu ze
+   `SampleScene`, včetně turretu na zkoušení. Zbývá: **jak se upgrade odebírá?**
+8. **Ovládání menu vysílačkou.** Zatím **ne** (04.10.2026) — myš a klávesnice. Přidat později?
    Sandbox (psaní jména) bez klávesnice nepůjde.
-9. **Končí hra někdy?** Vyhrává se po určitém bossovi, nebo jsou vlny nekonečné?
+9. ~~**Končí hra někdy?**~~ **ROZHODNUTO 04.10.2026** — po bossovi na vlně 10 je výhra.
 10. **Které další statistiky na obrazovku s výsledkem?** Návrhy: počet zničených turretů, přesnost
     (zásahy / výstřely), čas runu, počet průletů žlutými kruhy, „Nejlepší vlna" se
-    musí ukládat mimo run, aby přežila konec hry — rekordy jen pro Normal, nebo zvlášť pro každou
-    obtížnost?
+    musí ukládat mimo run, aby přežila konec hry — **zatím zvlášť pro každou obtížnost**
+    (04.10.2026). Zničené turrety jsou na obrazovce už teď.

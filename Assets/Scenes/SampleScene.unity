@@ -383,6 +383,7 @@ GameObject:
   - component: {fileID: 315145754}
   - component: {fileID: 315145755}
   - component: {fileID: 315145756}
+  - component: {fileID: 315145757}
   m_Layer: 0
   m_Name: Drone
   m_TagString: Player
@@ -561,17 +562,54 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 955ecb7b8016ae44cbd447d08e2ced97, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DroneStunArcs
+  kind: 1
   arcColor: {r: 1.2, g: 2.2, b: 6, a: 1}
   arcRate: 700
   onsetBurst: 25
   arcLifeMin: 0.18
   arcLifeMax: 0.45
+  sizeMin: 0.04
+  sizeMax: 0.1
+  gravity: 0
   fieldCenter: {x: 0, y: 0, z: 0.3}
   fieldRadius: 1.8
   fieldThickness: 0.45
   noiseStrength: 1.8
   noiseFrequency: 1.6
   noiseScrollSpeed: 2.5
+  useTrails: 1
+  trailLifetime: 0.25
+  trailWidth: 0.35
+  fadeInSpeed: 12
+  fadeOutSpeed: 3
+--- !u!114 &315145757
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 315145748}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 955ecb7b8016ae44cbd447d08e2ced97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DroneStunArcs
+  kind: 0
+  arcColor: {r: 4, g: 3.2, b: 0.4, a: 1}
+  arcRate: 45
+  onsetBurst: 35
+  arcLifeMin: 0.5
+  arcLifeMax: 1
+  sizeMin: 0.08
+  sizeMax: 0.22
+  gravity: 0.6
+  fieldCenter: {x: 0, y: 0, z: 0.3}
+  fieldRadius: 1.8
+  fieldThickness: 0.45
+  noiseStrength: 0
+  noiseFrequency: 1.6
+  noiseScrollSpeed: 2.5
+  useTrails: 0
   trailLifetime: 0.25
   trailWidth: 0.35
   fadeInSpeed: 12
@@ -1291,6 +1329,50 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 832575517}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1136847332
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1136847334}
+  - component: {fileID: 1136847333}
+  m_Layer: 0
+  m_Name: ReturnToMenu
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1136847333
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1136847332}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a322bd54944c4fe1194f8d35ef7a5bca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ReturnToMenu
+--- !u!4 &1136847334
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1136847332}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -2326,3 +2408,4 @@ SceneRoots:
   - {fileID: 1445679947}
   - {fileID: 791461481}
   - {fileID: 252681210}
+  - {fileID: 1136847334}

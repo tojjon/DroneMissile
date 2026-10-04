@@ -10,8 +10,11 @@ physical RC transmitter (exposed as a HID joystick) with a keyboard fallback.
 - Unity **6000.5.10f1** (pinned in `ProjectSettings/ProjectVersion.txt`; the editor must match exactly)
 - **URP** (Universal Render Pipeline) 17.5.0 — PC and Mobile render pipeline assets under `Assets/Settings/`
 - **Input System** 1.20.0 (the new package, not legacy `Input`) — `Assets/InputSystem_Actions.inputactions`
-- One scene in the build: `Assets/Scenes/SampleScene.unity`
-- Installed editor path: `C:/Program Files/Unity/Hub/Editor/6000.5.10f1/`
+- Four scenes in the build, in this order: `MainMenu` (index 0 — the game launches into it),
+  `Arena` (the wave run — New game loads it), `SampleScene` (open-terrain free flight), `Sandbox` —
+  all in `Assets/Scenes/`
+- Installed editor path: `C:/Program Files/Unity/Hub/Editor/6000.5.10f1/` on Windows,
+  `~/Unity/Hub/Editor/6000.5.10f1/` on Viktor's Linux machine (see the Flatpak note under Commands)
 
 ## Design intent
 
@@ -49,6 +52,20 @@ UNITY="/c/Program Files/Unity/Hub/Editor/6000.5.10f1/Editor/Unity.exe"
 # Single test / subset — filter is a regex over the full test name
 "$UNITY" -runTests -batchmode -projectPath . -testPlatform EditMode \
          -testFilter "EnemyTurretTests.TakeDamage_ReducesHealth" -testResults results.xml
+
+# Run an editor builder headlessly (the Tools > DroneMissile menu items)
+"$UNITY" -batchmode -quit -projectPath . -executeMethod MainMenuBuilder.BuildAll -logFile -
+```
+
+**On Viktor's Linux machine both Unity Hub and VS Code are Flatpaks**, and the Personal license
+lives inside the Hub's sandbox. Running the editor binary directly fails with *"No valid Unity
+Editor license found"*; run it inside the Hub sandbox instead, and write logs under `$HOME` — each
+sandbox has its own `/tmp`:
+
+```bash
+flatpak-spawn --host flatpak run \
+  --command=$HOME/Unity/Hub/Editor/6000.5.10f1/Editor/Unity com.unity.UnityHub \
+  -batchmode -quit -nographics -projectPath "$PWD" -logFile ~/.cache/drone-compile.log
 ```
 
 **Only one process may hold the project at a time.** Unity locks `Library/`, so every CLI command
@@ -60,7 +77,7 @@ editor log to stdout; without it the log goes to `Logs/` (gitignored).
 
 ## Architecture
 
-Nine `MonoBehaviour` scripts plus one static helper (`FxAssets`) in `Assets/scripts/`, no assembly
+Twenty-two `MonoBehaviour` scripts plus three static classes (`FxAssets`, `GameSession`, `UiKit`) in `Assets/scripts/`, no assembly
 definitions — everything compiles into the default `Assembly-CSharp`. There is no manager, service
 locator, or event bus; components find each other at runtime through **Unity tags**, and are wired
 to prefabs/scene objects through serialized public fields set in the Inspector. `Assets/Editor/`
@@ -141,6 +158,30 @@ projectiles* — the drone is dynamic, and with `Discrete` its 0.387 m collider 
 the terrain heightfield above ~19.4 m/s, which one drop off the pad exceeds.
 
 Only `EnemyTurret` dies in the ordinary sense (`Destroy(gameObject)`). There is no win condition.
+
+**Four turret types share `EnemyTurret` and differ by projectile prefab** ([decision
+#22](docs/decisions.md)). `EnemyProjectile` is now a base class and on its own is the **grey**
+turret's shot — identical to the old enemy rocket (trigger only, `useSweep: false`, tunnels at
+1080 m/s per decision #14). `ElectricProjectile` (blue; on impact a particle `ElectricZap` jumps to
+the drone within `zapRange`), `ExplosiveProjectile` (red; `OverlapSphereNonAlloc` stuns within
+`blastRadius`) and `HomingProjectile` (green; `Steer()` rotates toward the drone at `turnRate`) set
+`useSweep: true` and override the virtual hooks `OnImpact`, `Steer` and `OnExpire`. The sweep is the
+same technique as `RocketProjectile.Sweep`, duplicated in the base; both hit paths funnel through one
+`consumed`-guarded `Hit()`. Lifetime runs through `Invoke(Expire)`, not `Destroy(gameObject, t)`, so
+a subclass can leave an effect behind. `visualPrefab` is the slot for the grey turret's rock model.
+
+`DroneControls.Stun(seconds, StunKind)` records `LastStunKind`, and the drone carries **two
+`DroneStunArcs`**, one per kind: `Electric` (the original arcs) and `Rock` (yellow debris: no noise,
+no trails, gravity) — each plays only for its own kind. `stunKind` is a field on each projectile
+prefab. `MainMenuBuilder` strips all instances.
+
+`Assets/Editor/TurretTypesBuilder.cs` (`Tools > DroneMissile > Build Turret Types`) generates the
+materials (`turret_*.mat`, `proj_*.mat`), the projectile prefabs (`Assets/3D models/enemy_{rock,
+electric,explosive,homing}`) and the turret prefabs (`Assets/Prefabs/Turrets/Turret_*`, saved from a
+temporary copy of SampleScene's `turret`), adds the rock stun effect to the drone, and places one of
+each type in `Sandbox` **600 m from the pad** — beyond the 360 m detection range, so they engage one
+at a time. It **only creates missing assets**: Inspector tuning on the prefabs survives a rerun;
+delete an asset to regenerate it. SampleScene keeps its own turret and `enemy_rocket.prefab`.
 
 **Effects are built in code too, and none of them is an asset.** There is no ParticleSystem, shader,
 `.mat` or `.png` for VFX anywhere in `Assets/` and VFX Graph is deliberately not installed — all
@@ -244,7 +285,52 @@ a spriteless quad.
 the component to every `EnemyTurret` in the open scene. The drone still has no health bar and no
 health — [decisions #10 and #12](docs/decisions.md) are unchanged.
 
-**The HUD builds itself in code and polls.** `DroneHUD` is the only screen-space UI in the project;
+**The wave run lives in `Arena.unity` and `RunManager` owns death there** ([decision
+#23](docs/decisions.md)). `Assets/Editor/ArenaBuilder.cs` (`Tools > DroneMissile > Build Arena`,
+needs Build Turret Types first) copies SampleScene, removes terrain/pad/turret, builds a 300 × 300 ×
+80 m box from cubes (floor top at y = 0; walls + ceiling carry the empty `ArenaWall` marker and cast
+no shadows), sets the drone's `reloadSceneOnDeath = false`, and adds `RunManager` (prefab refs, wave
+table, arena size) and `RunUI`. It also creates `Turret_Boss.prefab` (grey ×3, 600 HP, `BossTurret`)
+and `enemy_boss_rock.prefab` (sweep with `sweepRadius` 1.5) only if missing.
+
+- **Death:** with `reloadSceneOnDeath` off, `DroneControls` stays crashed; `RunManager` polls
+  `DeathDelayElapsed`, then Easy → `drone.ResetTo(spawn)` + restart the wave, Normal → end screen.
+  `DroneHUD` clears its death message when `HasCrashed` goes false again. On Easy,
+  `OnCollisionEnter` stuns instead of crashing when the collider has `ArenaWall` (#20).
+- **Waves:** `RunManager.waves` (Inspector table). Turrets spawn at random floor points and are
+  lifted by renderer bounds (`RunManager.RestOnGround`) because prefab roots are not at their base.
+  A wave is cleared when the live list is empty **and** `ColorBall.InFlight == 0`; boss balls
+  `Register()` the turrets they spawn. Pauses use `Time.timeScale = 0`; `Shoting` refuses to fire
+  then. Run stats and best wave (per difficulty, `PlayerPrefs`) live in `GameSession`;
+  `EnemyTurret.TakeDamage` reports the HP actually removed.
+- **Rings:** `YellowRing` builds a hoop of collider-less cubes plus one trigger box; passing it calls
+  `Shoting.AddBonus(1)` (stacking). `Shoting.Fire` adds the bonus to `RocketProjectile.damage`
+  (default 10 — no longer hardcoded) and boosted rockets blink via a property block. Both projectile
+  `OnTriggerEnter`s now ignore other triggers, so rings and projectiles don't detonate each other.
+- **UI:** `UiKit` (static) holds the shared canvas/button/text builders and `UiStyle`; `MainMenu` and
+  `RunUI` both use it. `RunUI` (sorting order 200, above `DroneHUD`) shows the wave counter, ring
+  bonus, the boss bar, the between-wave panel and the RUN OVER / VICTORY end screen.
+
+**The main menu is a scene of its own, built in code like the HUD — but it takes input.**
+`MainMenu.unity` and `Sandbox.unity` are **copies of `SampleScene`** made by
+`Assets/Editor/MainMenuBuilder.cs` (`Tools > DroneMissile > Build All Menu Scenes`, or the
+per-scene items), never hand-authored. The copies are snapshots: edits to SampleScene do not reach
+them until the builder is rerun, which replaces the copy (after a confirmation dialog). The menu
+copy is stripped for use as a backdrop — no `HUD`, the drone loses `DroneControls`, `Shoting`,
+`DroneStunArcs` and its `Rigidbody` and is retagged `Untagged` (so `EnemyTurret` finds no target
+and stays silent), and `Main Camera` is unparented and circles the drone via `MenuCameraOrbit`.
+`MainMenu` builds a screen-space canvas with three panels (main, difficulty, upgrades placeholder)
+using the same CanvasScaler/legacy-`Text` setup as `DroneHUD`, plus what the HUD deliberately lacks:
+a `GraphicRaycaster` and an `EventSystem` with **`InputSystemUIInputModule`** — the project runs
+the new Input System only, so the legacy `StandaloneInputModule` would throw. It reselects the open
+panel's first button whenever the selection is lost, so arrows/Enter always work. Scene names live
+in the static `GameSession` (with the chosen `Difficulty`, which nothing in gameplay reads yet, and
+`HasSave`, always false — Continue is greyed out). A scene loaded by name must also be in the build
+list (`Tools > DroneMissile > Configure Build Scenes`). `ReturnToMenu` (Esc → menu) sits in
+SampleScene and Sandbox as a **temporary stopgap** until the ESC pause menu exists. All
+[decision #21](docs/decisions.md).
+
+**The HUD builds itself in code and polls.** `DroneHUD` is the only screen-space UI in gameplay;
 the turret bar above is the only world-space one. It finds the
 drone by the `Player` tag in `Start()`, then constructs its whole hierarchy — Canvas (screen-space
 overlay), a full-screen `Image` for the stun vignette, four `Image` ticks for the crosshair, a `Text`

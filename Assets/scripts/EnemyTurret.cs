@@ -95,12 +95,18 @@ public class EnemyTurret : MonoBehaviour
 
     public void TakeDamage(int amount)
     {
+        if (currentHealth <= 0) return; // already dying this frame - don't count it twice
+
+        // Only the HP actually removed counts toward the run stats, so overkill does not inflate them.
+        GameSession.RecordDamage(Mathf.Min(amount, currentHealth));
+
         currentHealth -= amount;
         Debug.Log("Turret took damage! Health: " + currentHealth);
 
         if (currentHealth <= 0)
         {
             Debug.Log("Turret destroyed!");
+            GameSession.TurretsDestroyed++;
             Destroy(gameObject);
         }
     }

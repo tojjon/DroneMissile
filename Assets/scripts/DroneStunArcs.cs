@@ -33,6 +33,10 @@ using UnityEngine.Rendering;
 [RequireComponent(typeof(DroneControls))]
 public class DroneStunArcs : MonoBehaviour
 {
+    [Header("Kind")]
+    [Tooltip("Plays only for stuns of this kind. The drone carries one instance per kind: Electric is the arcs below with their defaults, Rock is a second instance retuned as yellow debris (no noise, no trails, gravity). See docs/decisions.md #22.")]
+    public DroneControls.StunKind kind = DroneControls.StunKind.Electric;
+
     [Header("Arcs")]
     [Tooltip("HDR. Reaches the GPU through the material, not startColor - the particle vertex stream is Color32 and would clamp this to 1, so it could never cross Bloom's threshold of 1.")]
     public Color arcColor = new Color(1.2f, 2.2f, 6f, 1f);
@@ -47,6 +51,13 @@ public class DroneStunArcs : MonoBehaviour
     public float arcLifeMin = 0.18f;
     public float arcLifeMax = 0.45f;
 
+    [Tooltip("Particle size range in metres. Small for sparks; the rock instance uses chunkier debris.")]
+    public float sizeMin = 0.04f;
+    public float sizeMax = 0.10f;
+
+    [Tooltip("0 for electricity, which does not fall. The rock instance drops its debris.")]
+    public float gravity = 0f;
+
     [Header("Field (drone-local metres)")]
     [Tooltip("Centre of the emission shell, in drone-local space. Slightly ahead of the origin so more of it lands in view - see the class comment on why it is not on the hull.")]
     public Vector3 fieldCenter = new Vector3(0f, 0f, 0.3f);
@@ -59,14 +70,17 @@ public class DroneStunArcs : MonoBehaviour
     public float fieldThickness = 0.45f;
 
     [Header("Crackle")]
-    [Tooltip("How violently the noise field throws particles around. This is what reads as electric rather than as a spark shower.")]
+    [Tooltip("How violently the noise field throws particles around. This is what reads as electric rather than as a spark shower. 0 turns the noise module off.")]
     public float noiseStrength = 1.8f;
 
     [Tooltip("Higher frequency means tighter, more jagged deflection.")]
     public float noiseFrequency = 1.6f;
     public float noiseScrollSpeed = 2.5f;
 
-    [Tooltip("Length of the trail behind each particle, in seconds. The trails are what you actually read as arcs.")]
+    [Tooltip("Trails are what you actually read as arcs. Off for debris.")]
+    public bool useTrails = true;
+
+    [Tooltip("Length of the trail behind each particle, in seconds.")]
     public float trailLifetime = 0.25f;
 
     [Range(0.05f, 1f)]
@@ -94,7 +108,7 @@ public class DroneStunArcs : MonoBehaviour
     // Reading it in Update leaves the emitter a frame behind the drone while it rolls.
     void LateUpdate()
     {
-        float target = drone.IsStunned ? 1f : 0f;
+        float target = drone.IsStunned && drone.LastStunKind == kind ? 1f : 0f;
         float speed = target > intensity ? fadeInSpeed : fadeOutSpeed;
         intensity = Mathf.MoveTowards(intensity, target, speed * Time.deltaTime);
 
@@ -133,7 +147,7 @@ public class DroneStunArcs : MonoBehaviour
     {
         // No parent: see the class comment. Created at runtime, so it belongs to the active scene and
         // dies with it on SceneManager.LoadScene, like everything else here.
-        GameObject rigGo = new GameObject("DroneStunArcs");
+        GameObject rigGo = new GameObject("DroneStunArcs_" + kind);
         rig = rigGo.transform;
         rig.SetPositionAndRotation(transform.position, transform.rotation);
 
@@ -160,9 +174,9 @@ public class DroneStunArcs : MonoBehaviour
         main.playOnAwake = false;                 // LateUpdate calls Play() when the rig comes back
         main.startLifetime = new ParticleSystem.MinMaxCurve(arcLifeMin, arcLifeMax);
         main.startSpeed = new ParticleSystem.MinMaxCurve(1.5f, 5f);
-        main.startSize = new ParticleSystem.MinMaxCurve(0.04f, 0.10f);
+        main.startSize = new ParticleSystem.MinMaxCurve(sizeMin, sizeMax);
         main.startColor = Color.white;            // 0-1 only; the HDR tint rides the material
-        main.gravityModifier = 0f;                // electricity does not fall
+        main.gravityModifier = gravity;           // 0 for electricity, which does not fall
         main.simulationSpace = ParticleSystemSimulationSpace.World;   // the whole point - see class comment
         main.maxParticles = 300;
 
@@ -182,7 +196,7 @@ public class DroneStunArcs : MonoBehaviour
         // trail behind it becomes the visible arc. It replaces the hand-built jagged polylines the
         // LineRenderer version used, and it moves, which they never did.
         var noise = ps.noise;
-        noise.enabled = true;
+        noise.enabled = noiseStrength > 0f;
         noise.strength = noiseStrength;
         noise.frequency = noiseFrequency;
         noise.scrollSpeed = noiseScrollSpeed;
@@ -190,7 +204,7 @@ public class DroneStunArcs : MonoBehaviour
         noise.damping = false;                    // damping would scale strength with size and calm it down
 
         var trails = ps.trails;
-        trails.enabled = true;
+        trails.enabled = useTrails;
         trails.ratio = 1f;                        // every particle gets one
         trails.lifetime = new ParticleSystem.MinMaxCurve(trailLifetime);
         trails.minVertexDistance = 0.02f;

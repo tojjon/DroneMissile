@@ -97,6 +97,14 @@ public class DroneHUD : MonoBehaviour
             // the death message comes in. Nothing left to keep in sync, and no extra tunable.
             crosshair.alpha = 1f - deathAlpha;
         }
+        else if (!drone.HasCrashed && deathAlpha > 0f)
+        {
+            // Back from the dead without a scene reload - Easy restarts the wave in place
+            // (docs/decisions.md #23). Snap, don't fade: the restart is a cut, not a recovery.
+            deathAlpha = 0f;
+            deathText.color = WithAlpha(deathColor, 0f);
+            crosshair.alpha = 1f;
+        }
     }
 
     // Swings between (1 - pulseDepth) and 1, starting at 1, so the pulse only ever dims the border
