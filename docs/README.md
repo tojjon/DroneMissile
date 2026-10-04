@@ -10,6 +10,8 @@ Dělicí linka, ať se to nerozjede:
 | `docs/` | záměr, herní design, rozhodnutí + jejich důvody, hardwarová fakta | jak je to naprogramované |
 | `CLAUDE.md` | jak je to naprogramované, příkazy, pasti v repu | proč jsme to tak chtěli |
 | kód | pravda o implementaci | pravda o záměru |
+| `docs/features/` | co ve hře právě je a jak se to chová | proč (to je `decisions.md`) |
+| `docs/concepts/` | implementační plány, včetně odchylek při stavbě | aktuální stav (ten je ve `features/`) |
 
 Když se rozejde `docs/` a kód, **`docs/` vyhrává** — to znamená, že kód je pozadu, ne že dokumentace
 je špatná. Jedinou výjimkou jsou bloky označené `[OVĚŘENO]`, které záměrně popisují realitu.
@@ -29,6 +31,8 @@ je špatná. Jedinou výjimkou jsou bloky označené `[OVĚŘENO]`, které zám�
 | [reference/unity-gotchas.md](reference/unity-gotchas.md) | Unity pasti, na které jsme narazili |
 | [decisions.md](decisions.md) | rozhodovací log — jedno rozhodnutí = jeden záznam, append-only |
 | [backlog.md](backlog.md) | otevřené bugy a nápady, s ověřeným stavem |
+| [features/](features/README.md) | **co ve hře je teď** — jedna featura = jeden dokument, s hodnotami a stavem testování |
+| [concepts/](concepts/) | plány, podle kterých se featury stavěly: [main menu](concepts/main-menu.md), [typy turretů](concepts/turret-types.md), [aréna a run](concepts/arena-run.md) |
 
 ## Značky
 
