@@ -1,6 +1,6 @@
 # Obrazovka mezi vlnami
 
-**Stav:** hotovo (bez karet) · otestováno hraním: ano · `[OVĚŘENO 04.10.2026]`
+**Stav:** hotovo · otestováno hraním: obrazovka ano, karty zatím ne · `[OVĚŘENO 04.10.2026]`
 
 ## Co to je
 
@@ -8,20 +8,15 @@ Po vyčištění vlny se hra **zastaví** a ukáže panel:
 
 - titulek **„WAVE N CLEARED"**,
 - damage v této vlně, damage za celý run, počet zničených turretů,
-- **pět slotů na karty** s textem „No upgrades yet" (počet je pole `cardsOffered` na `RunUI`),
-- tlačítko **Continue** → další vlna.
+- **karty upgradů** (až 5, bez opakování) — **klik na kartu = upgrade + další vlna**
+  ([upgrades.md](upgrades.md)),
+- tlačítko **Continue** jen tehdy, když není co nabídnout.
 
 Na **Hardcore** se tahle obrazovka neukazuje: místo ní 2 s nápis „WAVE N CLEARED" a další vlna
 začne sama, bez pauzy ([rozhodnutí #25](../decisions.md)).
 
 Ovládá se myší nebo Enterem. Během pauzy stojí fyzika i střelba; dron po Continue pokračuje tam,
 kde byl.
-
-## Zbývá
-
-**Karty upgradů** — podle zadání 5 náhodných karet s raritou (common 60 % … mythic 1 %), hráč si
-jednu vybere. Sloty jsou připravené, čeká se na seznam upgradů
-([design/game-structure.md](../design/game-structure.md)).
 
 ## Kde v projektu
 

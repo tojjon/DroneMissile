@@ -6,8 +6,8 @@ using UnityEngine.UI;
 /// The run's screens, polled from RunManager (docs/design/game-structure.md, waves.md):
 /// - always: WAVE n / total, and NEXT SHOT +k while a yellow-ring bonus is pending;
 /// - boss wave: the boss's health bar across the top of the screen (the exception to #13);
-/// - between waves: "Wave N cleared", the wave's stats, five card slots (no upgrades exist yet,
-///   so they say so) and Continue;
+/// - between waves: "Wave N cleared", the wave's stats, up to five upgrade cards to pick from
+///   (picking one starts the next wave; Continue only when there is nothing to offer);
 /// - end of run: RUN OVER / VICTORY with Stats and Upgrades tabs and a Main menu button.
 ///
 /// Built in code with UiKit, like MainMenu. DroneHUD (stun border, crosshair, death message) stays
@@ -21,7 +21,6 @@ public class RunUI : MonoBehaviour
     public Color bonusColor = new Color(1f, 0.85f, 0.1f, 1f);
     public Color bossBarColor = new Color(0.85f, 0.1f, 0.1f, 1f);
     public Color bossBarBackground = new Color(0f, 0f, 0f, 0.6f);
-    public Color cardColor = new Color(1f, 1f, 1f, 0.08f);
 
     [Tooltip("Cards offered after each wave - 5 per the spec (docs/design/game-structure.md).")]
     public int cardsOffered = 5;
@@ -46,6 +45,8 @@ public class RunUI : MonoBehaviour
     private Text endTitle;
     private Text endStats;
     private Text endUpgrades;
+    private Transform endUpgradeRow;
+    private Transform cardRow;
     private GameObject menuButton;
 
     private RunManager.State shown = RunManager.State.Playing;
@@ -103,7 +104,7 @@ public class RunUI : MonoBehaviour
                 "Damage this wave:  " + GameSession.DamageThisWave + "\n" +
                 "Damage total:  " + GameSession.DamageTotal + "\n" +
                 "Turrets destroyed:  " + GameSession.TurretsDestroyed;
-            currentFirst = continueButton;
+            currentFirst = FillOffer();
         }
         else if (state == RunManager.State.Ended)
         {
@@ -115,7 +116,7 @@ public class RunUI : MonoBehaviour
                 "Damage last wave:  " + GameSession.DamageThisWave + "\n" +
                 "Damage total:  " + GameSession.DamageTotal + "\n" +
                 "Turrets destroyed:  " + GameSession.TurretsDestroyed;
-            endUpgrades.text = GameSession.UpgradesEnabled ? "No upgrades picked." : "Hardcore - no upgrades.";
+            FillPicked();
             ShowTab(true);
             currentFirst = menuButton;
         }
@@ -131,7 +132,61 @@ public class RunUI : MonoBehaviour
     void ShowTab(bool stats)
     {
         endStats.gameObject.SetActive(stats);
-        endUpgrades.gameObject.SetActive(!stats);
+        bool any = GameSession.OwnedUpgrades.Count > 0;
+        endUpgrades.gameObject.SetActive(!stats && !any);
+        endUpgradeRow.gameObject.SetActive(!stats && any);
+    }
+
+    // The card offer (docs/plans/upgrades.md): picking a card grants it and starts the next wave.
+    // Continue only shows when there is nothing to offer. Returns what to select first.
+    GameObject FillOffer()
+    {
+        UiKit.Clear(cardRow);
+        var offer = GameSession.UpgradesEnabled ? UpgradeCatalog.Draw(cardsOffered) : new System.Collections.Generic.List<UpgradeDefinition>();
+
+        GameObject first = null;
+        foreach (UpgradeDefinition def in offer)
+        {
+            string id = def.id;
+            Button card = UiKit.NewCardButton(cardRow, def, 3f, () => Pick(id), style);
+            if (first == null) first = card.gameObject;
+        }
+
+        cardRow.gameObject.SetActive(offer.Count > 0);
+        continueButton.SetActive(offer.Count == 0);
+        return first != null ? first : continueButton;
+    }
+
+    void Pick(string id)
+    {
+        GameSession.AddUpgrade(id);
+        run.ContinueToNextWave();
+    }
+
+    // End screen, Upgrades tab: the run's cards with how many of each.
+    void FillPicked()
+    {
+        endUpgrades.text = GameSession.UpgradesEnabled ? "No upgrades picked." : "Hardcore - no upgrades.";
+        UiKit.Clear(endUpgradeRow);
+        foreach (string id in GameSession.OwnedUpgrades)
+        {
+            UpgradeDefinition def = UpgradeCatalog.Find(id);
+            if (def == null) continue;
+
+            Image art = UiKit.NewCardArt(endUpgradeRow, def.card, 2f);
+            int n = GameSession.Stacks(id);
+            if (n > 1)
+            {
+                Text count = UiKit.NewText(art.transform, "Count", "x" + n, 34, style.titleColor, style.font);
+                count.fontStyle = FontStyle.Bold;
+                count.alignment = TextAnchor.LowerRight;
+                RectTransform rt = count.rectTransform;
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.offsetMin = rt.offsetMax = new Vector2(-6f, 4f);
+                count.gameObject.AddComponent<Outline>().effectColor = Color.black;
+            }
+        }
     }
 
     // ---- construction -----------------------------------------------------------------------
@@ -209,34 +264,14 @@ public class RunUI : MonoBehaviour
 
     void BuildIntermission(Transform parent)
     {
-        intermission = CentrePanel(parent, "Intermission", new Vector2(1500f, 720f));
+        intermission = CentrePanel(parent, "Intermission", new Vector2(1500f, 900f));
         Transform col = PanelColumn(intermission.transform, 1400f);
 
         intermissionTitle = Heading(col, "");
         intermissionStats = Body(col, 150f);
 
-        // Card slots. The card system plugs in here once upgrades exist (game-structure.md, q. 2).
-        GameObject row = new GameObject("Cards", typeof(RectTransform), typeof(HorizontalLayoutGroup));
-        row.transform.SetParent(col, false);
-        row.GetComponent<RectTransform>().sizeDelta = new Vector2(1400f, 240f);
-        HorizontalLayoutGroup h = row.GetComponent<HorizontalLayoutGroup>();
-        h.spacing = 24f;
-        h.childAlignment = TextAnchor.MiddleCenter;
-        h.childControlWidth = h.childControlHeight = false;
-        h.childForceExpandWidth = h.childForceExpandHeight = false;
-        for (int i = 0; i < cardsOffered; i++)
-        {
-            Image card = UiKit.NewRect<Image>(row.transform, "Card");
-            card.color = cardColor;
-            card.raycastTarget = false;
-            card.rectTransform.sizeDelta = new Vector2(250f, 220f);
-            Text t = UiKit.NewText(card.transform, "Text", "No upgrades yet", 26, style.disabledTextColor, style.font);
-            t.alignment = TextAnchor.MiddleCenter;
-            RectTransform trt = t.rectTransform;
-            trt.anchorMin = Vector2.zero;
-            trt.anchorMax = Vector2.one;
-            trt.offsetMin = trt.offsetMax = Vector2.zero;
-        }
+        // Card offer - filled each time the screen opens (FillOffer). 3x the 71x100 card art.
+        cardRow = UiKit.NewRow(col, "Cards", new Vector2(1400f, UiKit.CardH * 3f + 90f), 24f).transform;
 
         continueButton = UiKit.NewButton(col, "Continue", () => run.ContinueToNextWave(), style).gameObject;
         intermission.SetActive(false);
@@ -265,6 +300,7 @@ public class RunUI : MonoBehaviour
         endUpgrades = Body(col, 300f);
         endUpgrades.text = "No upgrades picked.";
         endUpgrades.color = style.disabledTextColor;
+        endUpgradeRow = UiKit.NewRow(col, "Picked", new Vector2(900f, 300f), 16f).transform;
 
         menuButton = UiKit.NewButton(col, "Main menu", () => SceneManager.LoadScene(GameSession.MainMenuScene), style).gameObject;
         endScreen.SetActive(false);

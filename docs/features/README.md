@@ -36,6 +36,7 @@ Každý dokument začíná řádkem **Stav** (hotovo / částečně, otestováno
 | [Žluté kruhy](yellow-rings.md) | **ne** |
 | [Obrazovka mezi vlnami](between-wave-screen.md) | ano |
 | [Obrazovka s výsledkem](end-screen.md) | **ne** |
+| [Upgrady a karty](upgrades.md) | **ne** |
 
 ## Menu a scény
 

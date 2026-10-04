@@ -44,6 +44,33 @@ public static class GameSession
         DamageThisWave = 0;
         DamageTotal = 0;
         TurretsDestroyed = 0;
+        upgradeOrder.Clear();
+        upgradeStacks.Clear();
+    }
+
+    // ---- upgrades owned in this run (docs/plans/upgrades.md) --------------------------------
+    // Survive an Easy wave restart; cleared by ResetRun (new run, back in the main menu).
+
+    static readonly System.Collections.Generic.List<string> upgradeOrder = new System.Collections.Generic.List<string>();
+    static readonly System.Collections.Generic.Dictionary<string, int> upgradeStacks = new System.Collections.Generic.Dictionary<string, int>();
+
+    // Distinct upgrade ids in the order they were first picked.
+    public static System.Collections.Generic.IReadOnlyList<string> OwnedUpgrades => upgradeOrder;
+
+    public static int Stacks(string id)
+    {
+        return upgradeStacks.TryGetValue(id, out int n) ? n : 0;
+    }
+
+    public static void AddUpgrade(string id)
+    {
+        if (!UpgradesEnabled) return;   // Hardcore (#25)
+        if (!upgradeStacks.ContainsKey(id))
+        {
+            upgradeStacks[id] = 0;
+            upgradeOrder.Add(id);
+        }
+        upgradeStacks[id]++;
     }
 
     public static void ResetWaveStats()

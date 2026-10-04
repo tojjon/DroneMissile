@@ -94,7 +94,7 @@ editor log to stdout; without it the log goes to `Logs/` (gitignored).
 
 ## Architecture
 
-Twenty-two `MonoBehaviour` scripts plus three static classes (`FxAssets`, `GameSession`, `UiKit`) in `Assets/scripts/`, no assembly
+Twenty-two `MonoBehaviour` scripts, one `ScriptableObject` (`UpgradeDefinition`) and static helpers (`FxAssets`, `GameSession`, `UiKit`, `UpgradeCatalog`, `Rarities`, `UpgradeIds`) in `Assets/scripts/`, no assembly
 definitions — everything compiles into the default `Assembly-CSharp`. There is no manager, service
 locator, or event bus; components find each other at runtime through **Unity tags**, and are wired
 to prefabs/scene objects through serialized public fields set in the Inspector. `Assets/Editor/`
@@ -331,6 +331,24 @@ and `enemy_boss_rock.prefab` (sweep with `sweepRadius` 1.5) only if missing.
 - **UI:** `UiKit` (static) holds the shared canvas/button/text builders and `UiStyle`; `MainMenu` and
   `RunUI` both use it. `RunUI` (sorting order 200, above `DroneHUD`) shows the wave counter, ring
   bonus, the boss bar, the between-wave panel and the RUN OVER / VICTORY end screen.
+
+**Upgrades are assets, effects are code keyed by id** ([decision #26](docs/decisions.md)).
+`UpgradeDefinition` (`ScriptableObject`: id, name, description, card `Sprite`, `Rarity`) assets live
+in `Assets/Resources/Upgrades/` and `UpgradeCatalog` loads them with `Resources.LoadAll` — the card
+offer, the main-menu catalog and the end screen need no list in code. `UpgradeCatalog.Draw` rolls a
+rarity by weight among rarities still in the pool (= re-rolling empty ones) and never repeats an
+upgrade in one offer. Owned upgrades and their stacks are in `GameSession` (`AddUpgrade` ignores
+Hardcore; `ResetRun` clears them, and `MainMenu.Start` calls it). Effects read
+`GameSession.Stacks(id)` at fire time in `Shoting`: Double Strike = a burst of `1 + stacks` rockets
+`burstInterval` apart (a timer, so pauses freeze it; the ring bonus rides on every rocket);
+Homing = `FindScopeTarget()` picks the turret whose `EnemyTurret.AimPoint` projects inside the
+square scope (also drawn by `DroneHUD`) and `RocketProjectile.Steer` turns toward it — the one
+deliberate exception to the exact-crosshair rule; Lightning = `RocketProjectile.Chain` zaps the
+nearest not-yet-hit turret within `chainRange` for `ceil(damage × chainDamageFraction)` per stack.
+All tuning is on `Shoting`. `Assets/Editor/UpgradesBuilder.cs` (`Tools > DroneMissile > Build
+Upgrades`) imports `Assets/UI/Upgrades/*.png` as point-filtered sprites and creates missing
+definition assets. Card UI helpers (`NewCardArt`, `NewCardButton`, art at whole-number scale) are
+in `UiKit`.
 
 **The main menu is a scene of its own, built in code like the HUD — but it takes input.**
 `MainMenu.unity` and `Sandbox.unity` are **copies of `SampleScene`** made by

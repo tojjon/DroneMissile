@@ -19,7 +19,8 @@ Záložka **Stats**:
 - damage v poslední vlně a za celý run,
 - počet zničených turretů.
 
-Záložka **Upgrades**: zatím „No upgrades picked." — sem přijdou karty vybrané za run.
+Záložka **Upgrades**: karty vybrané za run se stupněm (×2, ×3); bez karet „No upgrades
+picked.", na Hardcore „Hardcore - no upgrades."
 
 Tlačítko **Main menu**.
 

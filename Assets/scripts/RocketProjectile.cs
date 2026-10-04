@@ -16,6 +16,20 @@ public class RocketProjectile : MonoBehaviour
     [Tooltip("The object that fired this rocket. Set by Shoting.Fire() right after Instantiate.")]
     public Transform owner;
 
+    // Upgrades (docs/plans/upgrades.md) - all set by Shoting at fire time, never in the prefab.
+    // Homing: steer toward this turret at homingTurnRate deg/s. Null = unguided, the default and
+    // the reason the crosshair is exact (decisions #12); Homing is the deliberate exception.
+    [System.NonSerialized] public EnemyTurret homingTarget;
+    [System.NonSerialized] public float homingTurnRate;
+
+    // Lightning: on a turret hit, zap this many further turrets within chainRange.
+    [System.NonSerialized] public int chainJumps;
+    [System.NonSerialized] public float chainRange;
+    [System.NonSerialized] public float chainDamageFraction;
+
+    [Tooltip("HDR colour of the Lightning upgrade's zaps.")]
+    public Color chainColor = new Color(1.2f, 2.2f, 6f, 1f);
+
     [Header("Impact FX")]
     [Tooltip("Spawn a red boom where this rocket dies. Every impact - terrain, the slab, the turret.")]
     public bool impactFx = true;
@@ -94,6 +108,8 @@ public class RocketProjectile : MonoBehaviour
     {
         if (consumed) return;
 
+        Steer();
+
         Vector3 from = rb.position;
         Vector3 dir = transform.forward;
         float step = speed * Time.fixedDeltaTime;
@@ -114,6 +130,20 @@ public class RocketProjectile : MonoBehaviour
         }
 
         rb.MovePosition(from + dir * step);
+    }
+
+    // Homing upgrade: turn toward the locked turret, limited to homingTurnRate - the same steering
+    // as the enemy HomingProjectile. A target that died just leaves the rocket flying straight.
+    void Steer()
+    {
+        if (homingTarget == null || !homingTarget.Alive) return;
+
+        Vector3 toTarget = homingTarget.AimPoint - rb.position;
+        if (toTarget.sqrMagnitude < 0.0001f) return;
+
+        rb.rotation = Quaternion.RotateTowards(rb.rotation, Quaternion.LookRotation(toTarget),
+                                               homingTurnRate * Time.fixedDeltaTime);
+        transform.rotation = rb.rotation;
     }
 
     // Nearest non-owner hit along the segment, allocation-free.
@@ -174,10 +204,40 @@ public class RocketProjectile : MonoBehaviour
         EnemyTurret turret = other.GetComponentInParent<EnemyTurret>();
         if (turret != null)
         {
+            // Captured before the damage: a killing hit queues Destroy, and the chain starts here.
+            Vector3 from = turret.AimPoint;
             turret.TakeDamage(damage);
+            if (chainJumps > 0) Chain(turret, from);
         }
 
         Destroy(gameObject);
+    }
+
+    // Lightning upgrade: each jump goes to the nearest turret not yet in the chain, within
+    // chainRange of the last one, for a share of the rocket's damage (rounded up).
+    void Chain(EnemyTurret first, Vector3 from)
+    {
+        System.Collections.Generic.List<EnemyTurret> hit = new System.Collections.Generic.List<EnemyTurret> { first };
+        int jumpDamage = Mathf.CeilToInt(damage * chainDamageFraction);
+
+        for (int jump = 0; jump < chainJumps; jump++)
+        {
+            EnemyTurret next = null;
+            float best = chainRange * chainRange;
+            foreach (EnemyTurret t in FindObjectsByType<EnemyTurret>())
+            {
+                if (!t.Alive || hit.Contains(t)) continue;
+                float d = (t.AimPoint - from).sqrMagnitude;
+                if (d <= best) { best = d; next = t; }
+            }
+            if (next == null) return;
+
+            Vector3 to = next.AimPoint;
+            ElectricZap.Spawn(from, to, chainColor);
+            next.TakeDamage(jumpDamage);
+            hit.Add(next);
+            from = to;
+        }
     }
 
     // `point` and `normal` come from the sweep, so this is the real contact point on the real

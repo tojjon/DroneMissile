@@ -24,6 +24,13 @@ public class EnemyTurret : MonoBehaviour
     public int CurrentHealth => currentHealth;
     public float HealthFraction => maxHealth > 0 ? Mathf.Clamp01((float)currentHealth / maxHealth) : 0f;
 
+    // What player upgrades aim at - Homing steers here, Lightning zaps here. The barrel pivot is the
+    // head of the turret; the root sits at its base (or, in prefabs, wherever the old scene had it).
+    public Vector3 AimPoint => barrel != null ? barrel.position : transform.position;
+
+    // False from the hit that kills it until Destroy lands at the end of the frame.
+    public bool Alive => currentHealth > 0;
+
     // Awake, not Start: TurretHealthBar reads HealthFraction in its own Start(), and Start() order
     // between two components on the same object is undefined. Awake always runs first, so the bar
     // can never come up empty on the first frame.

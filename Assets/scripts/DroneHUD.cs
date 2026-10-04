@@ -51,7 +51,17 @@ public class DroneHUD : MonoBehaviour
     public bool crosshairOutline = true;
     public Color crosshairOutlineColor = new Color(0f, 0f, 0f, 0.6f);
 
+    // The Homing upgrade's lock-on square (docs/plans/upgrades.md). Only shown while the player owns
+    // Homing; its size comes from Shoting, which also decides what is locked.
+    [Header("Homing Scope")]
+    public Color scopeColor = new Color(1f, 1f, 1f, 0.6f);
+    public Color scopeLockedColor = new Color(1f, 0.2f, 0.2f, 0.95f);
+    public float scopeThickness = 3f;
+
     private DroneControls drone;
+    private Shoting gun;
+    private RectTransform scope;
+    private Image[] scopeEdges;
     private Image vignette;
     private Text deathText;
     private CanvasGroup crosshair;
@@ -64,6 +74,7 @@ public class DroneHUD : MonoBehaviour
         // Tag contract, same as EnemyTurret targeting: the drone root carries the Player tag.
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null) drone = player.GetComponent<DroneControls>();
+        if (player != null) gun = player.GetComponent<Shoting>();
 
         if (drone == null)
         {
@@ -80,6 +91,8 @@ public class DroneHUD : MonoBehaviour
     {
         // IsStunned goes false the moment the drone crashes, so the border fades out under the
         // death message instead of sitting there at full red.
+        UpdateScope();
+
         float target = drone.IsStunned ? stunColor.a * Pulse() : 0f;
         float speed = target > vignetteAlpha ? fadeInSpeed : fadeOutSpeed;
 
@@ -105,6 +118,50 @@ public class DroneHUD : MonoBehaviour
             deathText.color = WithAlpha(deathColor, 0f);
             crosshair.alpha = 1f;
         }
+    }
+
+    // Size from Shoting.HomingScopeFraction (share of screen height), red while a turret is locked.
+    // The canvas is in 1920x1080 reference units scaled by height-ish, so the side is converted
+    // through the canvas rect rather than Screen.height.
+    void UpdateScope()
+    {
+        float f = gun != null && !drone.HasCrashed ? gun.HomingScopeFraction : 0f;
+        scope.gameObject.SetActive(f > 0f);
+        if (f <= 0f) return;
+
+        float side = f * ((RectTransform)scope.parent).rect.height;
+        scope.sizeDelta = new Vector2(side, side);
+        Color c = gun.HomingLocked ? scopeLockedColor : scopeColor;
+        foreach (Image e in scopeEdges) e.color = c;
+    }
+
+    void BuildScope(Transform parent)
+    {
+        GameObject root = new GameObject("HomingScope", typeof(RectTransform));
+        root.transform.SetParent(parent, false);
+        scope = root.GetComponent<RectTransform>();
+        scope.anchorMin = scope.anchorMax = scope.pivot = new Vector2(0.5f, 0.5f);
+
+        // Four edges anchored to the sides of the square, so resizing the root is all it takes.
+        scopeEdges = new Image[4];
+        Vector2[] min = { new Vector2(0, 1), new Vector2(0, 0), new Vector2(0, 0), new Vector2(1, 0) };
+        Vector2[] max = { new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 1), new Vector2(1, 1) };
+        for (int i = 0; i < 4; i++)
+        {
+            GameObject go = new GameObject("Edge", typeof(RectTransform));
+            go.transform.SetParent(root.transform, false);
+            RectTransform rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = min[i];
+            rt.anchorMax = max[i];
+            bool horizontal = i < 2;
+            rt.sizeDelta = horizontal ? new Vector2(0f, scopeThickness) : new Vector2(scopeThickness, 0f);
+            rt.anchoredPosition = Vector2.zero;
+
+            Image img = go.AddComponent<Image>();
+            img.raycastTarget = false;
+            scopeEdges[i] = img;
+        }
+        root.SetActive(false);
     }
 
     // Swings between (1 - pulseDepth) and 1, starting at 1, so the pulse only ever dims the border
@@ -140,6 +197,7 @@ public class DroneHUD : MonoBehaviour
         // Sibling order is draw order. The cross goes above the vignette (which is edge-only, so
         // they never overlap anyway) and below the death message, which must win the centre.
         crosshair = BuildCrosshair(canvasGo.transform);
+        BuildScope(canvasGo.transform);
 
         // Added after the vignette, so it is a later sibling and draws on top of it.
         deathText = NewGraphic<Text>(canvasGo.transform, "DeathText");

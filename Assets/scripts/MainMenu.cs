@@ -22,6 +22,7 @@ public class MainMenu : MonoBehaviour
     private GameObject mainPanel;
     private GameObject difficultyPanel;
     private GameObject upgradesPanel;
+    private GameObject catalog;
 
     // What gets selected when a panel opens, so arrows + Enter work without touching the mouse.
     private GameObject mainFirst;
@@ -35,6 +36,10 @@ public class MainMenu : MonoBehaviour
         Time.timeScale = 1f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+
+        // Back in the menu = the last run is over; its upgrades must not leak into the sandbox or
+        // the next run.
+        GameSession.ResetRun();
 
         style.font = UiKit.BuiltinFont();
         UiKit.EnsureEventSystem();
@@ -79,6 +84,7 @@ public class MainMenu : MonoBehaviour
         mainPanel.SetActive(panel == mainPanel);
         difficultyPanel.SetActive(panel == difficultyPanel);
         upgradesPanel.SetActive(panel == upgradesPanel);
+        catalog.SetActive(panel == upgradesPanel);
 
         currentFirst = first;
         UiKit.Select(first);
@@ -132,8 +138,65 @@ public class MainMenu : MonoBehaviour
         // Upgrades - a catalog once upgrades exist; there are none yet (game-structure.md, question 2).
         upgradesPanel = NewColumn(canvasGo.transform, "UpgradesPanel");
         UiKit.NewLabel(upgradesPanel.transform, "Upgrades", style);
-        UiKit.NewLabel(upgradesPanel.transform, "No upgrades yet.", style).color = style.disabledTextColor;
+        if (UpgradeCatalog.All.Count == 0)
+        {
+            UiKit.NewLabel(upgradesPanel.transform, "No upgrades yet.", style).color = style.disabledTextColor;
+        }
         upgradesFirst = UiKit.NewButton(upgradesPanel.transform, "Back", () => Show(mainPanel, mainFirst), style).gameObject;
+        catalog = BuildCatalog(canvasGo.transform);
+    }
+
+    // Every upgrade: card art, name, what it does. Right of the button column, on its own dark panel.
+    GameObject BuildCatalog(Transform parent)
+    {
+        float left = leftMargin * 2f + style.buttonSize.x + 40f;
+
+        Image bg = UiKit.NewRect<Image>(parent, "Catalog");
+        bg.color = style.panelColor;
+        bg.raycastTarget = false;
+        RectTransform rt = bg.rectTransform;
+        rt.anchorMin = new Vector2(0f, 0f);
+        rt.anchorMax = new Vector2(1f, 1f);
+        rt.offsetMin = new Vector2(left, 80f);
+        rt.offsetMax = new Vector2(-60f, -80f);
+
+        GridLayoutGroup grid = bg.gameObject.AddComponent<GridLayoutGroup>();
+        grid.padding = new RectOffset(30, 30, 30, 30);
+        grid.cellSize = new Vector2(320f, 420f);
+        grid.spacing = new Vector2(30f, 30f);
+        grid.childAlignment = TextAnchor.UpperLeft;
+
+        foreach (UpgradeDefinition def in UpgradeCatalog.All)
+        {
+            GameObject cell = new GameObject(def.displayName, typeof(RectTransform));
+            cell.transform.SetParent(bg.transform, false);
+
+            RectTransform art = UiKit.NewCardArt(cell.transform, def.card, 2f).rectTransform;
+            art.anchorMin = art.anchorMax = art.pivot = new Vector2(0.5f, 1f);
+            art.anchoredPosition = Vector2.zero;
+
+            Text name = UiKit.NewText(cell.transform, "Name", def.displayName + "  (" + def.rarity + ")", 28,
+                                      Rarities.Colour(def.rarity), style.font);
+            name.fontStyle = FontStyle.Bold;
+            name.alignment = TextAnchor.UpperCenter;
+            Place(name.rectTransform, -UiKit.CardH * 2f - 12f, 40f);
+
+            Text desc = UiKit.NewText(cell.transform, "Description", def.description, 22, style.titleColor, style.font);
+            desc.alignment = TextAnchor.UpperCenter;
+            desc.horizontalOverflow = HorizontalWrapMode.Wrap;
+            Place(desc.rectTransform, -UiKit.CardH * 2f - 56f, 150f);
+        }
+        return bg.gameObject;
+    }
+
+    // Full-width strip inside a catalog cell, `top` below the cell's top edge.
+    static void Place(RectTransform rt, float top, float height)
+    {
+        rt.anchorMin = new Vector2(0f, 1f);
+        rt.anchorMax = new Vector2(1f, 1f);
+        rt.pivot = new Vector2(0.5f, 1f);
+        rt.sizeDelta = new Vector2(0f, height);
+        rt.anchoredPosition = new Vector2(0f, top);
     }
 
     // A vertical stack of buttons anchored left, below the title.

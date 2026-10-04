@@ -193,4 +193,83 @@ public static class UiKit
     {
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(go);
     }
+
+    // ---- upgrade cards (docs/plans/upgrades.md) ---------------------------------------------
+
+    // Viktor's card art is 71 x 100 pixel art; scale by whole numbers so the pixels stay square.
+    public const float CardW = 71f, CardH = 100f;
+
+    public static Image NewCardArt(Transform parent, Sprite sprite, float scale)
+    {
+        Image img = NewRect<Image>(parent, "Art");
+        img.sprite = sprite;
+        img.preserveAspect = true;
+        img.raycastTarget = false;
+        img.rectTransform.sizeDelta = new Vector2(CardW * scale, CardH * scale);
+        return img;
+    }
+
+    // A pickable card: the art with the upgrade's name under it, on a frame that lights up in the
+    // style's highlight colour when hovered or selected with the keyboard.
+    public static Button NewCardButton(Transform parent, UpgradeDefinition def, float scale, UnityAction onClick, UiStyle s)
+    {
+        const float pad = 12f, nameH = 52f;
+        Vector2 art = new Vector2(CardW * scale, CardH * scale);
+
+        GameObject go = new GameObject(def.displayName, typeof(RectTransform), typeof(Image), typeof(Button));
+        go.transform.SetParent(parent, false);
+        go.GetComponent<RectTransform>().sizeDelta = new Vector2(art.x + 2f * pad, art.y + 2f * pad + nameH);
+
+        Image frame = go.GetComponent<Image>();
+        frame.color = Color.white;
+        Button button = go.GetComponent<Button>();
+        button.targetGraphic = frame;
+        ColorBlock colors = button.colors;
+        colors.normalColor = new Color(1f, 1f, 1f, 0.08f);
+        colors.highlightedColor = s.buttonHighlightColor;
+        colors.selectedColor = s.buttonHighlightColor;
+        colors.pressedColor = s.buttonHighlightColor * 0.8f;
+        colors.fadeDuration = 0.08f;
+        button.colors = colors;
+        button.onClick.AddListener(onClick);
+
+        RectTransform artRt = NewCardArt(go.transform, def.card, scale).rectTransform;
+        artRt.anchorMin = artRt.anchorMax = artRt.pivot = new Vector2(0.5f, 1f);
+        artRt.anchoredPosition = new Vector2(0f, -pad);
+
+        Text name = NewText(go.transform, "Name", def.displayName, 28, s.buttonTextColor, s.font);
+        name.alignment = TextAnchor.MiddleCenter;
+        RectTransform nrt = name.rectTransform;
+        nrt.anchorMin = new Vector2(0f, 0f);
+        nrt.anchorMax = new Vector2(1f, 0f);
+        nrt.pivot = new Vector2(0.5f, 0f);
+        nrt.sizeDelta = new Vector2(0f, nameH);
+        nrt.anchoredPosition = new Vector2(0f, pad * 0.5f);
+        return button;
+    }
+
+    public static HorizontalLayoutGroup NewRow(Transform parent, string name, Vector2 size, float spacing)
+    {
+        GameObject row = new GameObject(name, typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        row.transform.SetParent(parent, false);
+        row.GetComponent<RectTransform>().sizeDelta = size;
+        HorizontalLayoutGroup h = row.GetComponent<HorizontalLayoutGroup>();
+        h.spacing = spacing;
+        h.childAlignment = TextAnchor.MiddleCenter;
+        h.childControlWidth = h.childControlHeight = false;
+        h.childForceExpandWidth = h.childForceExpandHeight = false;
+        return h;
+    }
+
+    // Children of a rebuilt container go away now, not at the end of the frame - otherwise the
+    // layout counts them once more and the new row jumps.
+    public static void Clear(Transform container)
+    {
+        for (int i = container.childCount - 1; i >= 0; i--)
+        {
+            GameObject child = container.GetChild(i).gameObject;
+            child.SetActive(false);
+            Object.Destroy(child);
+        }
+    }
 }

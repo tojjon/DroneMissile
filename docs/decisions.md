@@ -822,3 +822,23 @@ jen na Easy, testují Easy explicitně, takže Hardcore dědí Normal. `RunManag
 
 **Kde:** [plans/hardcore-mode.md](plans/hardcore-mode.md),
 [features/death-and-difficulty.md](features/death-and-difficulty.md)
+
+---
+
+## #26 — Upgrady: asset na upgrade, karty bez opakování, Homing jako výjimka z #12
+
+**Rozhodnutí:** Každý upgrade je asset `UpgradeDefinition` v `Assets/Resources/Upgrades/` (id,
+jméno, popis, obrázek, rarita); karty, katalog i konec runu je najdou přes `UpgradeCatalog`. Efekt
+je v kódu podle `id`. Nabídka: rarita podle vah, prázdná rarita se losuje znovu, v jedné nabídce
+žádný upgrade dvakrát. Vlastněné upgrady žijí v `GameSession` (vydrží restart vlny na Easy,
+vynuluje je návrat do menu). První tři: Double Strike, Lightning, Homing. Viktor, 04.10.2026.
+
+**Proč:** Viktor bude upgrady přidávat postupně — přidání musí být jeden asset a efekt, ne úpravy
+menu ([plans/upgrades.md](plans/upgrades.md)).
+
+**Mění:** [#12](decisions.md) — raketa letí přesně na střed zaměřovače a nic ji nenavádí. **Homing
+je výslovná výjimka**, jen s kartou; bez ní #12 platí. Čtverec Homingu je jediný další prvek HUD.
+
+**Vylučuje:** upgrady na Hardcore ([#25](decisions.md)) — `GameSession.AddUpgrade` je tam ignoruje.
+
+**Kde:** [features/upgrades.md](features/upgrades.md), [../CLAUDE.md](../CLAUDE.md)

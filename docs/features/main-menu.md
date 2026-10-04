@@ -12,7 +12,7 @@ sloupec tlačítek.
 | **Continue** | **zašedlé** — ukládání zatím neexistuje |
 | **New game** | výběr **Easy / Normal / Hardcore** → spustí run v [aréně](arena.md) |
 | **Sandbox** | načte [sandbox](sandbox.md) |
-| **Upgrades** | katalog upgradů — zatím „No upgrades yet." |
+| **Upgrades** | katalog všech upgradů: karta, rarita, popis ([upgrades.md](upgrades.md)) |
 | **Quit** | ukončí hru (navíc proti zadání) |
 
 Ovládá se **myší nebo šipkami + Enter**. Vysílačkou zatím ne. Z gameplaye se zpět dostaneš **Esc**
