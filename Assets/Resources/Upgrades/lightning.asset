@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeDefinition
   id: lightning
   displayName: Lightning
-  description: Hits chain to the nearest turret within 40 m for half damage. +1 jump
+  description: Hits chain to the nearest turret within 160 m for half damage. +1 jump
     per card.
   card: {fileID: 21300000, guid: dffafdc6fcd343b51a37e30e60d68a38, type: 3}
   rarity: 2

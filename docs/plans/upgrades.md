@@ -57,7 +57,7 @@ stejná karta přidá jeden stupeň. Karty jsou pixel art 71 × 100 px v `Assets
 
 ### Lightning
 
-- Když raketa trefí turret, **přeskočí z něj výboj na nejbližší další turret do 40 m** a dá mu
+- Když raketa trefí turret, **přeskočí z něj výboj na nejbližší další turret do 160 m** (původně 40 m, změněno 04.10.2026) a dá mu
   **polovinu damage** rakety.
 - **Každá další karta = o jeden skok víc**, vždy na turret, který v řetězu ještě nebyl.
 - Dosah a podíl damage jsou proměnné k ladění. Vizuál: částicový blesk jako `ElectricZap`.
@@ -87,7 +87,7 @@ kartu té rarity.
 - Stejný upgrade v další vlně ano — **stupně se sčítají**.
 - Double Strike: dávka rychle za sebou; ring bonus dostane každá raketa dávky.
 - Homing: větší čtverec **i** ostřejší zatáčení za stupeň; výjimka z [#12](../decisions.md).
-- Lightning: skok do 40 m, polovina damage rakety, +1 skok za stupeň.
+- Lightning: skok do 160 m (původně 40 m), polovina damage rakety, +1 skok za stupeň.
 - Hardcore: žádná nabídka ([hardcore-mode.md](hardcore-mode.md)).
 
 ### Data — přidání upgradu = jeden asset
@@ -118,7 +118,7 @@ kartu té rarity.
   rakety. `RocketProjectile`: s cílem zatáčí `turnRate` (základ + přírůstek za stupeň) stejně jako
   `HomingProjectile.Steer`, pak sweep jako dnes.
 - **Lightning** — `RocketProjectile.HandleHit`: po zásahu turretu řetěz `stupeň` skoků; každý
-  skok na nejbližší **ještě nezasažený** turret do `chainRange` (40 m) za `ceil(damage / 2)`,
+  skok na nejbližší **ještě nezasažený** turret do `chainRange` (160 m) za `ceil(damage / 2)`,
   vizuál `ElectricZap` (modrý blesk). Pozice si vezme dřív, než zásah turret zničí.
 
 Všechny konstanty (`burstInterval`, velikosti čtverce, `turnRate`, `chainRange`, podíl damage)
@@ -149,7 +149,7 @@ Point filtr, bez komprese) a vytvoří tři `UpgradeDefinition` assety — jen c
 2. Viktor: po vlně 1 se ukážou **3 různé karty** s obrázky; výběr kartou spustí další vlnu.
    Double Strike → dávka 2 raket, se dvěma 3; kruh + dávka → všechny rakety blikají a mají bonus.
    Homing → čtverec, raketa se stočí na turret ve čtverci; druhá karta → větší čtverec. Lightning →
-   modrý skok na turret do 40 m, za druhou kartu další skok. Katalog v menu, seznam na konci runu,
+   modrý skok na turret do 160 m, za druhou kartu další skok. Katalog v menu, seznam na konci runu,
    Hardcore bez nabídky, restart vlny na Easy karty ponechá.
 
 ### Mimo rozsah

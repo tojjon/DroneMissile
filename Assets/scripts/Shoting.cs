@@ -29,7 +29,7 @@ public class Shoting : MonoBehaviour
 
     [Header("Upgrade: Lightning")]
     [Tooltip("How far a zap jumps from one turret to the next, in metres.")]
-    public float chainRange = 40f;
+    public float chainRange = 160f;
     [Range(0f, 1f)]
     [Tooltip("Share of the rocket's damage each jump deals.")]
     public float chainDamageFraction = 0.5f;

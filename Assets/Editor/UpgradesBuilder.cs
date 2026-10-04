@@ -29,7 +29,7 @@ public static class UpgradesBuilder
         new Spec { id = UpgradeIds.DoubleStrike, name = "Double Strike", rarity = Rarity.Common,
                    description = "Fires another shot right after the first one. +1 shot per card." },
         new Spec { id = UpgradeIds.Lightning, name = "Lightning", rarity = Rarity.Rare,
-                   description = "Hits chain to the nearest turret within 40 m for half damage. +1 jump per card." },
+                   description = "Hits chain to the nearest turret within 160 m for half damage. +1 jump per card." },
         new Spec { id = UpgradeIds.Homing, name = "Homing", rarity = Rarity.Epic,
                    description = "Rockets home onto turrets in the square scope. Bigger scope and sharper turns per card." },
     };

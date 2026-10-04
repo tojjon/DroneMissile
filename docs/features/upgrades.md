@@ -20,7 +20,7 @@ sčítají.
 | Karta | Rarita | Co dělá | Další karta |
 |---|---|---|---|
 | ![Double Strike](../../Assets/UI/Upgrades/double_strike.png) **Double Strike** | Common | stisk = dávka raket rychle za sebou (0,1 s); bonus ze žlutých kruhů dostane každá | +1 raketa |
-| ![Lightning](../../Assets/UI/Upgrades/lightning.png) **Lightning** | Rare | po zásahu turretu skočí modrý blesk na nejbližší další turret do 40 m za polovinu damage | +1 skok (vždy na nový turret) |
+| ![Lightning](../../Assets/UI/Upgrades/lightning.png) **Lightning** | Rare | po zásahu turretu skočí modrý blesk na nejbližší další turret do 160 m za polovinu damage | +1 skok (vždy na nový turret) |
 | ![Homing](../../Assets/UI/Upgrades/homing.png) **Homing** | Epic | na HUD velký čtverec; turret uvnitř zčervená čtverec a vystřelená raketa se na něj navede | větší čtverec + ostřejší zatáčení |
 
 Homing je **záměrná výjimka** z pravidla, že raketa letí přesně na střed zaměřovače
@@ -36,7 +36,7 @@ Na komponentě `Shoting` (dron), sekce *Upgrade*:
 | `homingScopeBase` / `homingScopePerStack` / `homingScopeMax` | 25 % / +10 % / 80 % výšky obrazovky |
 | `homingTurnBase` / `homingTurnPerStack` | 90 °/s / +60 °/s |
 | `homingRange` | 300 m |
-| `chainRange` | 40 m |
+| `chainRange` | 160 m (Viktor, 04.10.2026; původně 40 m) |
 | `chainDamageFraction` | 0,5 |
 
 Jména, popisy, obrázky a rarity jsou v assetech `Assets/Resources/Upgrades/*.asset`.
