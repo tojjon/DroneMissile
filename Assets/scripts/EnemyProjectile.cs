@@ -33,7 +33,18 @@ public class EnemyProjectile : MonoBehaviour
     [Tooltip("Optional model shown instead of this prefab's own mesh - e.g. the grey turret's rock. Visual only: the collider stays the prefab's.")]
     public GameObject visualPrefab;
 
+    [Tooltip("World size of the visual relative to the visual prefab's own size. The projectile root's non-uniform scale is cancelled, so 1 = the prefab as authored (the boss's rock uses 3).")]
+    public float visualScale = 1f;
+
+    [Tooltip("Top tumble speed of the visual in degrees per second. Each shot turns around X, Y and Z at once, each axis at its own random 50-100% of this and a random direction, from a random starting orientation. 0 = no spin.")]
+    public float visualSpin = 360f;
+
     protected Rigidbody rb;
+
+    // The spinning model and its per-shot rates (deg/s) around its own X, Y and Z. Null without a
+    // visualPrefab.
+    Transform visual;
+    Vector3 spinRates;
 
     // Set by whichever hit path fires first; stops the sweep and the trigger acting twice.
     protected bool consumed;
@@ -71,8 +82,38 @@ public class EnemyProjectile : MonoBehaviour
         {
             MeshRenderer own = GetComponent<MeshRenderer>();
             if (own != null) own.enabled = false;
-            Instantiate(visualPrefab, transform.position, transform.rotation, transform);
+
+            // The projectile root is a squashed rod (0.1 x 0.1 x 0.99 on enemy_rock), and a child
+            // inherits that - the rock would render as a needle, and spinning it would shear it.
+            // So the model sits under a holder that divides the scale back out: the holder's world
+            // matrix is a plain rotation, and the model can tumble freely inside it. Same trap as
+            // decision #4. The holder must keep an identity local rotation.
+            Transform holder = new GameObject("VisualHolder").transform;
+            holder.SetParent(transform, false);
+            Vector3 parent = transform.lossyScale;
+            holder.localScale = new Vector3(1f / parent.x, 1f / parent.y, 1f / parent.z);
+
+            visual = Instantiate(visualPrefab, holder).transform;
+            visual.localPosition = Vector3.zero;
+            visual.localRotation = Random.rotationUniform;
+            visual.localScale = visualPrefab.transform.localScale * visualScale;
+            spinRates = new Vector3(RandomRate(), RandomRate(), RandomRate());
         }
+    }
+
+    // Spin is cosmetic, so it runs per frame rather than per physics step: smooth at any frame
+    // rate, and it stops by itself while paused (timeScale 0).
+    // Applying all three per-axis turns every frame compounds them, so the effective axis keeps
+    // wandering - a tumble, not a steady spin around one tilted axis.
+    void Update()
+    {
+        if (visual != null) visual.Rotate(spinRates * Time.deltaTime, Space.Self);
+    }
+
+    float RandomRate()
+    {
+        float rate = visualSpin * Random.Range(0.5f, 1f);
+        return Random.value < 0.5f ? -rate : rate;
     }
 
     void FixedUpdate()

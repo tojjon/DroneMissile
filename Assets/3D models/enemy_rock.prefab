@@ -160,4 +160,5 @@ MonoBehaviour:
   owner: {fileID: 0}
   useSweep: 1
   sweepRadius: 0
-  visualPrefab: {fileID: 0}
+  visualPrefab: {fileID: 7711982812468106607, guid: dc5e64d664d64c95ab9877074b4aac1f, type: 3}
+  visualScale: 1
