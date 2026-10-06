@@ -38,8 +38,22 @@ public class DroneControls : MonoBehaviour
     [Tooltip("How long the drone cannot be stunned again after a stun ends.")]
     public float stunImmunity = 2f;
 
+    [Header("Block (upgrade)")]
+    [Tooltip("How long one block shrugs off every projectile.")]
+    public float blockDuration = 1f;
+
+    [Tooltip("Seconds to refill one used block charge. Charges = Block cards owned.")]
+    public float blockRecharge = 8f;
+
     private Rigidbody rb;
     private Joystick transmitter;
+
+    // Block upgrade (docs/plans/upgrades-2.md). One recharge timer refills one charge at a time.
+    private float blockUntil;
+    private int blockCharges;
+    private int knownMaxCharges;
+    private bool recharging;
+    private float rechargeAt;
 
     // Crash state. `armed` is a one-way latch - see the comment in FixedUpdate.
     private bool armed;
@@ -60,6 +74,11 @@ public class DroneControls : MonoBehaviour
     // True once the death message has had its beat. RunManager waits for this before acting, so the
     // arena keeps the same rhythm as the reload path.
     public bool DeathDelayElapsed => hasCrashed && Time.time >= reloadAt;
+
+    // Block state for DroneHUD (yellow screen edge, charge dots).
+    public bool IsBlocking => !hasCrashed && Time.time < blockUntil;
+    public int BlockCharges => blockCharges;
+    public int MaxBlockCharges => GameSession.Stacks(UpgradeIds.Block);
 
     // Kind of the stun currently running (or the last one). Only meaningful while IsStunned.
     public StunKind LastStunKind { get; private set; }
@@ -118,6 +137,50 @@ public class DroneControls : MonoBehaviour
         else if (transmitter != null)
         {
             Debug.Log("Using transmitter device: " + transmitter.displayName);
+        }
+    }
+
+    // Block input lives in Update, not FixedUpdate: wasPressedThisFrame is a per-frame edge and a
+    // physics step can miss it or see it twice.
+    void Update()
+    {
+        UpdateBlockCharges();
+
+        // Paused (between waves, sandbox console - where F is typed into the field) or dead.
+        if (hasCrashed || Time.timeScale == 0f) return;
+
+        // Keyboard F for now; Viktor maps a transmitter switch later (docs/plans/upgrades-2.md).
+        bool pressed = Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame;
+        if (pressed && blockCharges > 0 && !IsBlocking)
+        {
+            blockCharges--;
+            blockUntil = Time.time + blockDuration;
+        }
+    }
+
+    void UpdateBlockCharges()
+    {
+        // A new card arrives charged; a card removed in the sandbox takes its charge with it.
+        int max = MaxBlockCharges;
+        if (max != knownMaxCharges)
+        {
+            blockCharges = Mathf.Clamp(blockCharges + max - knownMaxCharges, 0, max);
+            knownMaxCharges = max;
+        }
+
+        if (blockCharges >= max)
+        {
+            recharging = false;
+        }
+        else if (!recharging)
+        {
+            recharging = true;
+            rechargeAt = Time.time + blockRecharge;
+        }
+        else if (Time.time >= rechargeAt)
+        {
+            blockCharges++;
+            recharging = false;
         }
     }
 
@@ -212,7 +275,7 @@ public class DroneControls : MonoBehaviour
         if (GameSession.CurrentDifficulty == GameSession.Difficulty.Easy &&
             collision.collider.GetComponent<ArenaWall>() != null)
         {
-            Stun(wallStun, StunKind.Rock);
+            Stun(wallStun, StunKind.Rock, blockable: false);   // a wall is not a projectile
             return;
         }
 
@@ -227,6 +290,8 @@ public class DroneControls : MonoBehaviour
         armed = false;
         stunnedUntil = 0f;
         stunnableAgainAt = 0f;
+        blockUntil = 0f;
+        blockCharges = MaxBlockCharges;
 
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
@@ -237,9 +302,13 @@ public class DroneControls : MonoBehaviour
     }
 
     // Takes control away for `seconds`. Called by EnemyProjectile (and its subclasses) on a hit.
-    public void Stun(float seconds, StunKind kind)
+    // `blockable`: projectiles are, an arena wall on Easy is not. A blocked hit is dropped whole -
+    // no stun and no i-frames - and every projectile type comes through here, so the Block upgrade
+    // needs no check of its own in the projectiles.
+    public void Stun(float seconds, StunKind kind, bool blockable = true)
     {
         if (hasCrashed || Time.time < stunnableAgainAt) return;
+        if (blockable && IsBlocking) return;
 
         // Set only past the i-frame check, so a rejected hit cannot repaint a stun already running.
         LastStunKind = kind;

@@ -1,12 +1,12 @@
 # Vlny
 
-**Stav:** hotovo · otestováno hraním: vlny 1–2 ano, 3–10 zatím ne · `[OVĚŘENO 04.10.2026]`
+**Stav:** hotovo · otestováno hraním: vlny 1–2 ano, 3–10 zatím ne · `[OVĚŘENO 06.10.2026]` · vlny 11–30: [plans/waves-30.md](../plans/waves-30.md)
 
 ## Co to je
 
-Run v [aréně](arena.md) má **10 vln**. Vlna začne spawnem turretů a žlutých kruhů a skončí, až jsou
+Run v [aréně](arena.md) má **30 vln**. Vlna začne spawnem turretů a žlutých kruhů a skončí, až jsou
 všechny turrety zničené. Pak se hra zastaví na [obrazovce mezi vlnami](between-wave-screen.md).
-Desátá vlna je [boss](boss.md); po ní je výhra.
+Vlny **10, 20 a 30** jsou [boss](boss.md); po třicáté je výhra.
 
 | Vlna | Šedý | Modrý | Červený | Zelený |
 |---|---|---|---|---|
@@ -19,9 +19,29 @@ Desátá vlna je [boss](boss.md); po ní je výhra.
 | 7 | 2 | | | 1 |
 | 8 | 1 | 1 | 1 | 1 |
 | 9 | 2 | 2 | 2 | 2 |
-| 10 | **boss** | | | |
+| 10 | **boss** — kuličky všech barev | | | |
+| 11 | 3 | 1 | 1 | 1 |
+| 12 | 2 | 2 | 1 | 1 |
+| 13 | 2 | 1 | 2 | 1 |
+| 14 | 2 | 1 | 1 | 2 |
+| 15 | 3 | 2 | 2 | 1 |
+| 16 | 2 | 2 | 2 | 2 |
+| 17 | 3 | 2 | 2 | 2 |
+| 18 | 2 | 3 | 3 | 2 |
+| 19 | 3 | 3 | 3 | 3 |
+| 20 | **boss** — kuličky modré, červené, zelené | | | |
+| 21 | 2 | 2 | 2 | 2 |
+| 22 | 3 | 2 | 2 | 2 |
+| 23 | 2 | 3 | 2 | 3 |
+| 24 | 3 | 3 | 3 | 2 |
+| 25 | 3 | 3 | 3 | 3 |
+| 26 | 4 | 3 | 3 | 3 |
+| 27 | 3 | 4 | 3 | 4 |
+| 28 | 4 | 4 | 4 | 3 |
+| 29 | 4 | 4 | 4 | 4 |
+| 30 | **boss** — kuličky jen zelené | | | |
 
-Vlevo nahoře svítí `WAVE n / 10`.
+Vlevo nahoře svítí `WAVE n / 30`.
 
 ## Jak se to chová
 
@@ -37,6 +57,10 @@ Vlevo nahoře svítí `WAVE n / 10`.
 Tabulka je pole **`waves`** na objektu **`RunManager`** ve scéně `Arena` — počty se mění přímo
 v Inspectoru, řádky jdou přidávat i přesouvat. **Poslední řádek je finální vlna**; vyčištění = výhra.
 Tip na test bosse: přetáhni řádek s bossem na začátek (a pak zpátky).
+
+U řádku s bossem pole **`bossBalls`** vybírá barvy kuliček (nic = všechny čtyři).
+Výchozí tabulka je v kódu (`RunManager.DefaultWaves()`); **`Tools > DroneMissile > Apply Wave Table`**
+ji zapíše do scény a přepíše úpravy z Inspectoru.
 
 Další pole: `wallMargin`, `minTurretSpacing`, `minDistanceFromDrone`, `ringsPerWave`.
 

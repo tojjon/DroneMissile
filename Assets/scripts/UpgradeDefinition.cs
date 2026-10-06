@@ -37,7 +37,7 @@ public static class Rarities
     static readonly Color[] Colours =
     {
         new Color32(163, 163, 163, 255),   // Common - from Double Strike's corners
-        new Color32(40, 200, 60, 255),     // Uncommon - placeholder green (no card yet)
+        new Color32(31, 196, 78, 255),     // Uncommon - from Bouncy's corners
         new Color32(0, 30, 255, 255),      // Rare - from Lightning's corners
         new Color32(157, 0, 255, 255),     // Epic - from Homing's corners
         new Color32(255, 150, 0, 255),     // Legendary - placeholder orange (no card yet)
@@ -54,4 +54,9 @@ public static class UpgradeIds
     public const string DoubleStrike = "double_strike";
     public const string Homing = "homing";
     public const string Lightning = "lightning";
+    public const string Damage = "damage";
+    public const string Bouncy = "bouncy";
+    public const string Block = "block";
+    public const string Fire = "fire";
+    public const string Freeze = "freeze";
 }

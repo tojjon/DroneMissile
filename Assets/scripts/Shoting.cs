@@ -34,6 +34,17 @@ public class Shoting : MonoBehaviour
     [Tooltip("Share of the rocket's damage each jump deals.")]
     public float chainDamageFraction = 0.5f;
 
+    [Header("Upgrade: Fire")]
+    [Tooltip("Seconds a turret burns per Fire card.")]
+    public float fireDurationPerStack = 5f;
+    [Tooltip("Damage per burn tick, before +1 Damage cards (each adds 1).")]
+    public int fireTickDamage = 2;
+    public float fireTickInterval = 1f;
+
+    [Header("Upgrade: Freeze")]
+    [Tooltip("Seconds a turret stays frozen per Freeze card.")]
+    public float freezeDurationPerStack = 2f;
+
     private Joystick transmitter;
     private float nextFireTime = 0f;
 
@@ -136,7 +147,23 @@ public class Shoting : MonoBehaviour
         if (proj == null) return;
 
         proj.owner = transform;
-        proj.damage += bonus;   // boosted rockets blink
+
+        // +1 Damage rides on every rocket of the burst, like the ring bonus; only the ring bonus blinks.
+        int extra = GameSession.Stacks(UpgradeIds.Damage);
+        proj.damage += bonus + extra;
+        proj.boosted = bonus > 0;
+
+        proj.bouncesLeft = GameSession.Stacks(UpgradeIds.Bouncy);
+
+        int fire = GameSession.Stacks(UpgradeIds.Fire);
+        if (fire > 0)
+        {
+            proj.burnSeconds = fireDurationPerStack * fire;
+            proj.burnTickDamage = fireTickDamage + extra;   // +1 Damage raises the burn too (Viktor, 06.10.2026)
+            proj.burnTickInterval = fireTickInterval;
+        }
+
+        proj.freezeSeconds = freezeDurationPerStack * GameSession.Stacks(UpgradeIds.Freeze);
 
         int homing = GameSession.Stacks(UpgradeIds.Homing);
         if (homing > 0)

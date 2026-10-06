@@ -35,6 +35,9 @@ public class BossTurret : MonoBehaviour
 
     public float ballSize = 1.5f;
 
+    [Tooltip("Colours the balls may be, set per wave by RunManager (waves 20 and 30 narrow it). None = all four.")]
+    public RunManager.BallColours ballColours = RunManager.BallColours.None;
+
     [Tooltip("Where the balls leave from, above the boss's root.")]
     public float launchHeight = 8f;
 
@@ -55,11 +58,44 @@ public class BossTurret : MonoBehaviour
             nextVolley = Time.time;
         }
 
+        // Frozen (Freeze upgrade): the volley timer stands still with the rest of the turret.
+        if (turret.IsFrozen)
+        {
+            nextVolley += Time.deltaTime;
+            return;
+        }
+
         if (Time.time >= nextVolley)
         {
             Volley();
             nextVolley = Time.time + volleyInterval;
         }
+    }
+
+    // A random index into turretPrefabs among the allowed colours (bit i = index i). -1 if none of
+    // the allowed colours has a prefab.
+    int PickKind()
+    {
+        int allowed = (int)ballColours;
+        int count = 0;
+        for (int i = 0; i < turretPrefabs.Length; i++)
+        {
+            if (Allowed(allowed, i)) count++;
+        }
+        if (count == 0) return -1;
+
+        int pick = Random.Range(0, count);
+        for (int i = 0; i < turretPrefabs.Length; i++)
+        {
+            if (!Allowed(allowed, i)) continue;
+            if (pick-- == 0) return i;
+        }
+        return -1;
+    }
+
+    bool Allowed(int mask, int i)
+    {
+        return turretPrefabs[i] != null && (mask == 0 || (mask & (1 << i)) != 0);
     }
 
     void Volley()
@@ -69,7 +105,8 @@ public class BossTurret : MonoBehaviour
         Vector3 origin = transform.position + Vector3.up * launchHeight;
         for (int i = 0; i < ballCount; i++)
         {
-            int kind = Random.Range(0, turretPrefabs.Length);
+            int kind = PickKind();
+            if (kind < 0) return;
 
             // Evenly round the compass, tilted a random amount off vertical, so balls spread out
             // instead of piling onto one spot.

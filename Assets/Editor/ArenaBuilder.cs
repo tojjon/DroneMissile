@@ -130,6 +130,28 @@ public static class ArenaBuilder
         Debug.Log("ArenaBuilder: built " + ArenaPath + ".");
     }
 
+    // Writes RunManager.DefaultWaves() into Arena.unity without rebuilding it - the scene keeps its
+    // own serialized copy of the table, which overrides the code default (docs/plans/waves-30.md).
+    // Headless: Unity -batchmode -quit -executeMethod ArenaBuilder.ApplyWaveTable
+    [MenuItem("Tools/DroneMissile/Apply Wave Table")]
+    public static void ApplyWaveTable()
+    {
+        Scene scene = EditorSceneManager.OpenScene(ArenaPath, OpenSceneMode.Single);
+        RunManager run = Object.FindAnyObjectByType<RunManager>();
+        if (run == null)
+        {
+            Debug.LogError("ArenaBuilder: no RunManager in " + ArenaPath + " - run Build Arena first.");
+            return;
+        }
+
+        Undo.RecordObject(run, "Apply Wave Table");
+        run.waves = RunManager.DefaultWaves();
+        EditorUtility.SetDirty(run);
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
+        Debug.Log("ArenaBuilder: " + run.waves.Length + " waves written to " + ArenaPath + ".");
+    }
+
     // ---- assets ------------------------------------------------------------------------------
 
     // The boss's "big rock": the grey rock, three times the size, with a reliable sphere sweep and a

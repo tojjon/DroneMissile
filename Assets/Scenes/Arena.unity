@@ -276,6 +276,16 @@ MonoBehaviour:
   crosshairThickness: 2
   crosshairOutline: 1
   crosshairOutlineColor: {r: 0, g: 0, b: 0, a: 0.6}
+  scopeColor: {r: 1, g: 1, b: 1, a: 0.6}
+  scopeLockedColor: {r: 1, g: 0.2, b: 0.2, a: 0.95}
+  scopeThickness: 3
+  blockColor: {r: 1, g: 0.85, b: 0.1, a: 0.8}
+  blockFadeSpeed: 12
+  blockChargeColor: {r: 1, g: 0.85, b: 0.1, a: 0.95}
+  blockEmptyColor: {r: 1, g: 1, b: 1, a: 0.25}
+  blockDotSize: 10
+  blockDotSpacing: 18
+  blockDotsOffset: 48
 --- !u!4 &252681210
 Transform:
   m_ObjectHideFlags: 0
@@ -461,6 +471,8 @@ MonoBehaviour:
   reloadSceneOnDeath: 0
   wallStun: 1
   stunImmunity: 0.5
+  blockDuration: 1
+  blockRecharge: 8
 --- !u!114 &315145755
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -476,6 +488,19 @@ MonoBehaviour:
   rocketPrefab: {fileID: 7044272535471621713, guid: 42ec168b9deb7d1438e3a84b7f54a3ce, type: 3}
   firePoint: {fileID: 711199479}
   fireRate: 0.5
+  burstInterval: 0.1
+  homingScopeBase: 0.25
+  homingScopePerStack: 0.1
+  homingScopeMax: 0.8
+  homingTurnBase: 90
+  homingTurnPerStack: 60
+  homingRange: 300
+  chainRange: 160
+  chainDamageFraction: 0.5
+  fireDurationPerStack: 5
+  fireTickDamage: 2
+  fireTickInterval: 1
+  freezeDurationPerStack: 2
 --- !u!114 &315145756
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1633,7 +1658,6 @@ MonoBehaviour:
   bonusColor: {r: 1, g: 0.85, b: 0.1, a: 1}
   bossBarColor: {r: 0.85, g: 0.1, b: 0.1, a: 1}
   bossBarBackground: {r: 0, g: 0, b: 0, a: 0.6}
-  cardColor: {r: 1, g: 1, b: 1, a: 0.08}
   cardsOffered: 5
 --- !u!4 &1893720499
 Transform:
@@ -1690,51 +1714,181 @@ MonoBehaviour:
     red: 0
     green: 0
     boss: 0
+    bossBalls: 0
   - grey: 2
     blue: 0
     red: 0
     green: 0
     boss: 0
+    bossBalls: 0
   - grey: 1
     blue: 1
     red: 0
     green: 0
     boss: 0
+    bossBalls: 0
   - grey: 2
     blue: 1
     red: 0
     green: 0
     boss: 0
+    bossBalls: 0
   - grey: 2
     blue: 0
     red: 1
     green: 0
     boss: 0
+    bossBalls: 0
   - grey: 1
     blue: 1
     red: 1
     green: 0
     boss: 0
+    bossBalls: 0
   - grey: 2
     blue: 0
     red: 0
     green: 1
     boss: 0
+    bossBalls: 0
   - grey: 1
     blue: 1
     red: 1
     green: 1
     boss: 0
+    bossBalls: 0
   - grey: 2
     blue: 2
     red: 2
     green: 2
     boss: 0
+    bossBalls: 0
   - grey: 0
     blue: 0
     red: 0
     green: 0
     boss: 1
+    bossBalls: 0
+  - grey: 3
+    blue: 1
+    red: 1
+    green: 1
+    boss: 0
+    bossBalls: 0
+  - grey: 2
+    blue: 2
+    red: 1
+    green: 1
+    boss: 0
+    bossBalls: 0
+  - grey: 2
+    blue: 1
+    red: 2
+    green: 1
+    boss: 0
+    bossBalls: 0
+  - grey: 2
+    blue: 1
+    red: 1
+    green: 2
+    boss: 0
+    bossBalls: 0
+  - grey: 3
+    blue: 2
+    red: 2
+    green: 1
+    boss: 0
+    bossBalls: 0
+  - grey: 2
+    blue: 2
+    red: 2
+    green: 2
+    boss: 0
+    bossBalls: 0
+  - grey: 3
+    blue: 2
+    red: 2
+    green: 2
+    boss: 0
+    bossBalls: 0
+  - grey: 2
+    blue: 3
+    red: 3
+    green: 2
+    boss: 0
+    bossBalls: 0
+  - grey: 3
+    blue: 3
+    red: 3
+    green: 3
+    boss: 0
+    bossBalls: 0
+  - grey: 0
+    blue: 0
+    red: 0
+    green: 0
+    boss: 1
+    bossBalls: 14
+  - grey: 2
+    blue: 2
+    red: 2
+    green: 2
+    boss: 0
+    bossBalls: 0
+  - grey: 3
+    blue: 2
+    red: 2
+    green: 2
+    boss: 0
+    bossBalls: 0
+  - grey: 2
+    blue: 3
+    red: 2
+    green: 3
+    boss: 0
+    bossBalls: 0
+  - grey: 3
+    blue: 3
+    red: 3
+    green: 2
+    boss: 0
+    bossBalls: 0
+  - grey: 3
+    blue: 3
+    red: 3
+    green: 3
+    boss: 0
+    bossBalls: 0
+  - grey: 4
+    blue: 3
+    red: 3
+    green: 3
+    boss: 0
+    bossBalls: 0
+  - grey: 3
+    blue: 4
+    red: 3
+    green: 4
+    boss: 0
+    bossBalls: 0
+  - grey: 4
+    blue: 4
+    red: 4
+    green: 3
+    boss: 0
+    bossBalls: 0
+  - grey: 4
+    blue: 4
+    red: 4
+    green: 4
+    boss: 0
+    bossBalls: 0
+  - grey: 0
+    blue: 0
+    red: 0
+    green: 0
+    boss: 1
+    bossBalls: 8
   floorCentre: {x: 0, y: 0, z: 0}
   floorSize: {x: 300, y: 300}
   height: 80

@@ -862,3 +862,45 @@ Hardcore; obtížnost z posledního runu v sandboxu nic neznamená. V runu plat�
 
 **Kde:** [features/sandbox.md](features/sandbox.md),
 [plans/archive/sandbox-console.md](plans/archive/sandbox-console.md)
+
+---
+
+## #28 — Druhá sada upgradů: Block v `Stun()`, ailmenty i na skocích, blikání jen za kruhy
+
+**Rozhodnutí:** Pět nových upgradů (+1 Damage, Block, Bouncy, Fire, Freeze). Block zahazuje zásahy
+v jediném místě, `DroneControls.Stun(..., blockable)`: zablokovaný zásah nedá stun ani i-frames,
+stěna arény na Easy volá `blockable: false`. Nabití = počet karet, jedno se doplní za 8 s; po dobu
+bloku je okraj obrazovky žlutý. Fire a Freeze dostane každý turret, kterému raketa ubere HP —
+přímo i skokem Lightning; nový zásah oheň obnoví na plnou délku, nepřidá druhý. +1 Damage zvedá
+i tik ohně. Zmrzlému bossovi stojí časovač salvy. Bouncy se odráží od všeho kromě turretu.
+Viktor, 06.10.2026.
+
+**Proč:** Všechny projektily (kámen, blesk, výbuch, homing) už vedou přes `Stun()`, takže jedna
+kontrola pokryje každý typ i budoucí. Ailmenty i na skocích dělají z Lightning + Fire/Freeze kombo.
+
+**Mění:** blikání rakety — dřív `damage > 10`, teď příznak `boosted` (jen bonus ze žlutých
+kruhů); jinak by s +1 Damage blikala každá raketa.
+
+**Vylučuje:** ničení projektilů štítem (projektil normálně vybuchne, dron jen nic neschytá);
+víc ohňů na jednom turretu najednou.
+
+**Kde:** [features/upgrades.md](features/upgrades.md), [plans/upgrades-2.md](plans/upgrades-2.md)
+
+---
+
+## #29 — Run má 30 vln; barvy kuliček bosse jsou vlastnost vlny
+
+**Rozhodnutí:** Run končí výhrou po vlně 30. Boss je na vlnách 10, 20 a 30 — tentýž prefab;
+barvy kuliček určuje pole `bossBalls` řádku vlny (maska; nic = všechny): vlna 20 bez šedé, vlna 30
+jen zelená. Tabulka je `RunManager.DefaultWaves()` a do scény ji zapíše `Tools > DroneMissile >
+Apply Wave Table`. Viktor, 06.10.2026.
+
+**Proč:** Barvy patří k vlně, ne k prefabu bosse — jinak by byly tři prefaby bosse lišící se
+jedním polem. Maska s nulou = „všechny" nechává stará data (vlna 10) beze změny.
+
+**Mění:** [#23](decisions.md) — „vlna 10 je boss, po ní výhra" platí teď pro poslední vlnu tabulky
+(30).
+
+**Kde:** [features/waves.md](features/waves.md), [features/boss.md](features/boss.md),
+[plans/waves-30.md](plans/waves-30.md)
+

@@ -94,7 +94,7 @@ editor log to stdout; without it the log goes to `Logs/` (gitignored).
 
 ## Architecture
 
-Twenty-three `MonoBehaviour` scripts, one `ScriptableObject` (`UpgradeDefinition`) and static helpers (`FxAssets`, `GameSession`, `UiKit`, `UpgradeCatalog`, `Rarities`, `UpgradeIds`) in `Assets/scripts/`, no assembly
+Twenty-four `MonoBehaviour` scripts, one `ScriptableObject` (`UpgradeDefinition`) and static helpers (`FxAssets`, `GameSession`, `UiKit`, `UpgradeCatalog`, `Rarities`, `UpgradeIds`) in `Assets/scripts/`, no assembly
 definitions — everything compiles into the default `Assembly-CSharp`. There is no manager, service
 locator, or event bus; components find each other at runtime through **Unity tags**, and are wired
 to prefabs/scene objects through serialized public fields set in the Inspector. `Assets/Editor/`
@@ -318,7 +318,11 @@ and `enemy_boss_rock.prefab` (sweep with `sweepRadius` 1.5) only if missing.
   pause) instead of `Intermission`. Future card code must check `GameSession.UpgradesEnabled`.
   `DroneHUD` clears its death message when `HasCrashed` goes false again. On Easy,
   `OnCollisionEnter` stuns instead of crashing when the collider has `ArenaWall` (#20).
-- **Waves:** `RunManager.waves` (Inspector table). Turrets spawn at random floor points and are
+- **Waves:** `RunManager.waves` (Inspector table) — 30 waves, bosses on 10/20/30 ([decision
+  #29](docs/decisions.md)). The code default is `RunManager.DefaultWaves()`, but the scene keeps its
+  own serialized copy; `Tools > DroneMissile > Apply Wave Table` (`ArenaBuilder.ApplyWaveTable`)
+  writes the default into `Arena.unity`. A boss row's `bossBalls` mask (`BallColours`, 0 = all) is
+  handed to `BossTurret.ballColours`, which picks ball colours only from it. Turrets spawn at random floor points and are
   lifted by renderer bounds (`RunManager.RestOnGround`) because prefab roots are not at their base.
   A wave is cleared when the live list is empty **and** `ColorBall.InFlight == 0`; boss balls
   `Register()` the turrets they spawn. Pauses use `Time.timeScale = 0`; `Shoting` refuses to fire
@@ -345,7 +349,18 @@ Homing = `FindScopeTarget()` picks the turret whose `EnemyTurret.AimPoint` proje
 square scope (also drawn by `DroneHUD`) and `RocketProjectile.Steer` turns toward it — the one
 deliberate exception to the exact-crosshair rule; Lightning = `RocketProjectile.Chain` zaps the
 nearest not-yet-hit turret within `chainRange` for `ceil(damage × chainDamageFraction)` per stack.
-All tuning is on `Shoting`. `Assets/Editor/UpgradesBuilder.cs` (`Tools > DroneMissile > Build
+All tuning is on `Shoting`. The second set ([decision #28](docs/decisions.md),
+`docs/plans/upgrades-2.md`): **+1 Damage** adds to every rocket and to the Fire tick; rockets now
+blink on the `boosted` flag (ring bonus only), not `damage > 10`. **Bouncy** — `RocketProjectile.Bounce`
+reflects off any sweep hit without an `EnemyTurret`. **Fire/Freeze** — `RocketProjectile.ApplyAilments`
+calls `EnemyTurret.Ignite`/`Freeze` on direct hits *and* Lightning jumps; burn ticks run at the top of
+`EnemyTurret.Update` before every early return, a frozen turret returns before aiming, and
+`BossTurret` holds its volley timer while frozen. `TurretStatusFx` (added on the first ailment) draws
+an unparented flame rig (the boss root is scaled ×3) and a frost `MaterialPropertyBlock`. **Block** —
+`DroneControls` reads `F` in `Update`, charges = cards, one refill per `blockRecharge`; `Stun(seconds,
+kind, blockable = true)` drops blocked hits (no stun, no i-frames) and the Easy wall stun passes
+`blockable: false`. `DroneHUD` shows a yellow vignette while `IsBlocking` and charge dots under the
+crosshair. No transmitter mapping for Block yet. `Assets/Editor/UpgradesBuilder.cs` (`Tools > DroneMissile > Build
 Upgrades`) imports `Assets/UI/Upgrades/*.png` as point-filtered sprites and creates missing
 definition assets. Card UI helpers (`NewCardArt`, `NewCardButton`, art at whole-number scale) are
 in `UiKit`.

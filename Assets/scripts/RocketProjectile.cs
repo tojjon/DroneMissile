@@ -9,7 +9,7 @@ public class RocketProjectile : MonoBehaviour
     public int damage = 10;
 
     [Header("Boosted Blink")]
-    [Tooltip("A rocket carrying a ring bonus (damage above 10) blinks this colour. HDR so it blooms.")]
+    [Tooltip("A rocket carrying a ring bonus blinks this colour. HDR so it blooms.")]
     public Color boostColor = new Color(4f, 3.2f, 0.3f, 1f);
     public float blinkRate = 12f;
 
@@ -26,6 +26,23 @@ public class RocketProjectile : MonoBehaviour
     [System.NonSerialized] public int chainJumps;
     [System.NonSerialized] public float chainRange;
     [System.NonSerialized] public float chainDamageFraction;
+
+    // Ring bonus on this rocket - what makes it blink. A flag rather than damage > 10, because the
+    // +1 Damage upgrade raises damage too and must not make every rocket blink.
+    [System.NonSerialized] public bool boosted;
+
+    // Bouncy: reflect off anything that is not a turret, this many times.
+    [System.NonSerialized] public int bouncesLeft;
+
+    // Fire and Freeze: applied to every turret this rocket damages, directly or through a Lightning
+    // jump (Viktor, 06.10.2026). Zero = not owned.
+    [System.NonSerialized] public float burnSeconds;
+    [System.NonSerialized] public int burnTickDamage;
+    [System.NonSerialized] public float burnTickInterval;
+    [System.NonSerialized] public float freezeSeconds;
+
+    [Tooltip("Size of the spark left where a Bouncy rocket bounces, relative to impactScale.")]
+    public float bounceFxScale = 0.4f;
 
     [Tooltip("HDR colour of the Lightning upgrade's zaps.")]
     public Color chainColor = new Color(1.2f, 2.2f, 6f, 1f);
@@ -82,7 +99,7 @@ public class RocketProjectile : MonoBehaviour
             Debug.LogWarning("RocketProjectile: owner not set - the rocket will destroy itself on its own shooter.");
         }
 
-        if (damage > 10)
+        if (boosted)
         {
             body = GetComponent<Renderer>();
             blink = new MaterialPropertyBlock();
@@ -124,6 +141,13 @@ public class RocketProjectile : MonoBehaviour
         // The sweep also hands back a real surface normal, which is what orients the spark cone.
         if (Sweep(from, dir, step, out RaycastHit hit))
         {
+            // Bouncy: walls, floor, ceiling and terrain reflect the rocket; a turret is always a hit.
+            if (bouncesLeft > 0 && hit.collider.GetComponentInParent<EnemyTurret>() == null)
+            {
+                Bounce(hit, dir);
+                return;
+            }
+
             rb.position = hit.point;
             HandleHit(hit.collider, hit.point, hit.normal);
             return;
@@ -144,6 +168,20 @@ public class RocketProjectile : MonoBehaviour
         rb.rotation = Quaternion.RotateTowards(rb.rotation, Quaternion.LookRotation(toTarget),
                                                homingTurnRate * Time.fixedDeltaTime);
         transform.rotation = rb.rotation;
+    }
+
+    // Lifted a hair off the surface so the next sweep cannot start inside it. The rest of this step's
+    // distance is dropped - 2.4 m at most, invisible at 120 m/s.
+    void Bounce(RaycastHit hit, Vector3 dir)
+    {
+        bouncesLeft--;
+        SpawnImpactFx(hit.point, hit.normal, bounceFxScale);
+
+        Vector3 pos = hit.point + hit.normal * 0.05f;
+        Quaternion rot = Quaternion.LookRotation(Vector3.Reflect(dir, hit.normal));
+        rb.position = pos;
+        rb.rotation = rot;
+        transform.SetPositionAndRotation(pos, rot);
     }
 
     // Nearest non-owner hit along the segment, allocation-free.
@@ -197,7 +235,7 @@ public class RocketProjectile : MonoBehaviour
         Debug.Log("Rocket hit: " + other.gameObject.name);
 
         // Before the damage call, so a turret that TakeDamage() destroys cannot cost us the boom.
-        SpawnImpactFx(point, normal);
+        SpawnImpactFx(point, normal, 1f);
 
         // GetComponentInParent, not GetComponent: EnemyTurret sits on the empty parent while the
         // colliders are on its children. See docs/decisions.md #4.
@@ -207,6 +245,7 @@ public class RocketProjectile : MonoBehaviour
             // Captured before the damage: a killing hit queues Destroy, and the chain starts here.
             Vector3 from = turret.AimPoint;
             turret.TakeDamage(damage);
+            ApplyAilments(turret);
             if (chainJumps > 0) Chain(turret, from);
         }
 
@@ -235,16 +274,24 @@ public class RocketProjectile : MonoBehaviour
             Vector3 to = next.AimPoint;
             ElectricZap.Spawn(from, to, chainColor);
             next.TakeDamage(jumpDamage);
+            ApplyAilments(next);
             hit.Add(next);
             from = to;
         }
+    }
+
+    // Fire and Freeze. Both ignore a turret the hit just killed (EnemyTurret checks Alive).
+    void ApplyAilments(EnemyTurret t)
+    {
+        if (burnSeconds > 0f) t.Ignite(burnSeconds, burnTickDamage, burnTickInterval);
+        if (freezeSeconds > 0f) t.Freeze(freezeSeconds);
     }
 
     // `point` and `normal` come from the sweep, so this is the real contact point on the real
     // surface - no ClosestPoint() guesswork (that is undefined for TerrainCollider and non-convex
     // meshes, where it hands back the collider's transform origin) and no flight-path approximation
     // of the normal.
-    void SpawnImpactFx(Vector3 point, Vector3 normal)
+    void SpawnImpactFx(Vector3 point, Vector3 normal, float sizeFactor)
     {
         if (!impactFx) return;
 
@@ -261,6 +308,6 @@ public class RocketProjectile : MonoBehaviour
         ImpactExplosion boom = fx.AddComponent<ImpactExplosion>();
         boom.coreColor = impactColor;
         boom.sparkColor = new Color(impactColor.r * 0.75f, impactColor.g * 0.75f, impactColor.b * 0.75f, impactColor.a);
-        boom.scale = impactScale;
+        boom.scale = impactScale * sizeFactor;
     }
 }

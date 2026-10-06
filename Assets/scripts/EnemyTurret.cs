@@ -17,6 +17,18 @@ public class EnemyTurret : MonoBehaviour
     private Transform player;
     private float nextFireTime = 0f;
 
+    // Fire and Freeze upgrades (docs/plans/upgrades-2.md). Deadlines in Time.time, like the drone's
+    // stun, so pauses (timeScale 0) hold them still.
+    private float burnUntil;
+    private float nextBurnTick;
+    private int burnTickDamage;
+    private float burnTickInterval = 1f;
+    private float frozenUntil;
+
+    // Polled by TurretStatusFx (flames, frost tint) and BossTurret (volley timer).
+    public bool IsBurning => Alive && Time.time < burnUntil;
+    public bool IsFrozen => Alive && Time.time < frozenUntil;
+
     // Read-only state for TurretHealthBar, which polls it once a frame - the same arrangement as
     // DroneControls.IsStunned / .HasCrashed. currentHealth stays private and TakeDamage() remains
     // the only thing that changes it. See docs/decisions.md #13.
@@ -52,6 +64,18 @@ public class EnemyTurret : MonoBehaviour
 
     void Update()
     {
+        // Burning ticks before every early return: a turret that cannot see the drone still burns.
+        // The small epsilon lets the last tick land although nextBurnTick is a sum of floats.
+        while (burnTickDamage > 0 && Time.time >= nextBurnTick && nextBurnTick <= burnUntil + 0.001f)
+        {
+            nextBurnTick += burnTickInterval;
+            TakeDamage(burnTickDamage);
+            if (!Alive) return;
+        }
+
+        // Frozen: no turning, no firing. A shot that came due meanwhile goes out on the thaw.
+        if (Time.time < frozenUntil) return;
+
         if (player == null || barrel == null || firePoint == null) return;
 
         float distance = Vector3.Distance(transform.position, player.position);
@@ -98,6 +122,34 @@ public class EnemyTurret : MonoBehaviour
         // empty `turret` parent, so its hierarchy covers Turret_Base and Turret_Barrel.
         EnemyProjectile proj = projectile.GetComponent<EnemyProjectile>();
         if (proj != null) proj.owner = transform;
+    }
+
+    // Fire upgrade. A new hit restarts the burn at full length (never shortens it) rather than
+    // stacking a second fire; ticks keep their rhythm if it was already burning.
+    public void Ignite(float seconds, int tickDamage, float tickInterval)
+    {
+        if (!Alive || seconds <= 0f || tickDamage <= 0) return;
+
+        if (!IsBurning) nextBurnTick = Time.time + tickInterval;
+        burnUntil = Mathf.Max(burnUntil, Time.time + seconds);
+        burnTickDamage = tickDamage;
+        burnTickInterval = Mathf.Max(0.05f, tickInterval);
+        StatusFx();
+    }
+
+    // Freeze upgrade.
+    public void Freeze(float seconds)
+    {
+        if (!Alive || seconds <= 0f) return;
+
+        frozenUntil = Mathf.Max(frozenUntil, Time.time + seconds);
+        StatusFx();
+    }
+
+    // Added on the first ailment only, so turrets that are never burnt or frozen carry nothing extra.
+    void StatusFx()
+    {
+        if (GetComponent<TurretStatusFx>() == null) gameObject.AddComponent<TurretStatusFx>();
     }
 
     public void TakeDamage(int amount)

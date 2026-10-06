@@ -1,4 +1,4 @@
-# Boss (vlna 10)
+# Boss (vlny 10, 20, 30)
 
 **Stav:** hotovo · otestováno hraním: **zatím ne** · `[OVĚŘENO 04.10.2026]`
 
@@ -14,9 +14,11 @@ sebou.
   **2 s**.
 - Při **50 % HP** vystřelí nahoru **salvu 6 barevných kuliček** do různých směrů, pak znovu
   **každých 25 s**, dokud žije. Kde kulička dopadne na podlahu, **vyroste turret její barvy**
-  (barva náhodně). Od stěny se kulička odrazí.
+  (barva náhodně z povolených: vlna 10 všechny čtyři, **vlna 20 bez šedé**, **vlna 30 jen zelená**
+  — pole `bossBalls` v tabulce vln). Od stěny se kulička odrazí.
 - **Vlna končí, až padne boss i všechny přivolané turrety** — včetně kuliček, které ještě letí.
-- Vyčištění desáté vlny = **VICTORY** ([end-screen.md](end-screen.md)).
+- Boss je na všech třech vlnách tentýž (600 HP); liší se jen barvy kuliček.
+- Vyčištění třicáté vlny = **VICTORY** ([end-screen.md](end-screen.md)).
 
 ## Ladění
 

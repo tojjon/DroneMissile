@@ -32,6 +32,18 @@ public static class UpgradesBuilder
                    description = "Hits chain to the nearest turret within 160 m for half damage. +1 jump per card." },
         new Spec { id = UpgradeIds.Homing, name = "Homing", rarity = Rarity.Epic,
                    description = "Rockets home onto turrets in the square scope. Bigger scope and sharper turns per card." },
+
+        // Second set, 06.10.2026 (docs/plans/upgrades-2.md).
+        new Spec { id = UpgradeIds.Damage, name = "+1 Damage", rarity = Rarity.Common,
+                   description = "Every rocket deals 1 more damage. +1 per card." },
+        new Spec { id = UpgradeIds.Block, name = "Block", rarity = Rarity.Common,
+                   description = "Press F to block every incoming projectile for 1 s. Charges refill over time. +1 charge per card." },
+        new Spec { id = UpgradeIds.Bouncy, name = "Bouncy", rarity = Rarity.Uncommon,
+                   description = "Rockets bounce off floors, walls and ceilings. +1 bounce per card." },
+        new Spec { id = UpgradeIds.Fire, name = "Fire", rarity = Rarity.Rare,
+                   description = "Turrets you hit burn, taking damage every second for 5 s. +5 s per card." },
+        new Spec { id = UpgradeIds.Freeze, name = "Freeze", rarity = Rarity.Rare,
+                   description = "Turrets you hit stop turning and shooting for 2 s. +2 s per card." },
     };
 
     [MenuItem("Tools/DroneMissile/Build Upgrades")]

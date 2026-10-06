@@ -64,6 +64,12 @@ v Inspectoru:
   **+1 k příští střele, stackuje se** (dva kruhy = +2), kruh zmizí. Posílená raketa bliká žlutě,
   vlevo nahoře svítí `NEXT SHOT +k`. Kruhy samy nemají collider — dotek okraje dron nezabije.
 
+## Vlny 11–30 `[ZADÁNÍ]`
+
+Viktor, 06.10.2026: run pokračuje **do vlny 30**. **Vlna 20** je boss, jehož kuličky jsou všech
+barev **kromě šedé**; **vlna 30** totéž, ale kuličky **jen zelené**. Obsah ostatních vln je návrh
+v [plans/waves-30.md](../plans/waves-30.md) a tabulka v [features/waves.md](../features/waves.md).
+
 ## Otevřené otázky `[OTEVŘENÉ]`
 
 1. ~~**Vlny 3–9.**~~ **ROZHODNUTO 04.10.2026** — barvy se přidávají postupně, tabulka výš.

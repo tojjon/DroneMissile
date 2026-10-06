@@ -58,11 +58,28 @@ public class DroneHUD : MonoBehaviour
     public Color scopeLockedColor = new Color(1f, 0.2f, 0.2f, 0.95f);
     public float scopeThickness = 3f;
 
+    // The Block upgrade (docs/plans/upgrades-2.md): the screen edge goes yellow for exactly as long as
+    // the block lasts, and dots under the crosshair count the charges left.
+    [Header("Block")]
+    public Color blockColor = new Color(1f, 0.85f, 0.1f, 0.8f);
+    [Tooltip("Alpha per second. Fast both ways - the outline should match the 1 s block, not smear past it.")]
+    public float blockFadeSpeed = 12f;
+    public Color blockChargeColor = new Color(1f, 0.85f, 0.1f, 0.95f);
+    public Color blockEmptyColor = new Color(1f, 1f, 1f, 0.25f);
+    public float blockDotSize = 10f;
+    public float blockDotSpacing = 18f;
+    [Tooltip("Distance of the dot row below screen centre.")]
+    public float blockDotsOffset = 48f;
+
     private DroneControls drone;
     private Shoting gun;
     private RectTransform scope;
     private Image[] scopeEdges;
     private Image vignette;
+    private Image blockVignette;
+    private float blockAlpha;
+    private RectTransform blockDots;
+    private readonly System.Collections.Generic.List<Image> blockDotImages = new System.Collections.Generic.List<Image>();
     private Text deathText;
     private CanvasGroup crosshair;
 
@@ -92,6 +109,7 @@ public class DroneHUD : MonoBehaviour
         // IsStunned goes false the moment the drone crashes, so the border fades out under the
         // death message instead of sitting there at full red.
         UpdateScope();
+        UpdateBlock();
 
         float target = drone.IsStunned ? stunColor.a * Pulse() : 0f;
         float speed = target > vignetteAlpha ? fadeInSpeed : fadeOutSpeed;
@@ -133,6 +151,44 @@ public class DroneHUD : MonoBehaviour
         scope.sizeDelta = new Vector2(side, side);
         Color c = gun.HomingLocked ? scopeLockedColor : scopeColor;
         foreach (Image e in scopeEdges) e.color = c;
+    }
+
+    void UpdateBlock()
+    {
+        float target = drone.IsBlocking ? blockColor.a : 0f;
+        blockAlpha = Mathf.MoveTowards(blockAlpha, target, blockFadeSpeed * Time.deltaTime);
+        blockVignette.color = WithAlpha(blockColor, blockAlpha);
+
+        // One dot per card owned; rebuilt only when that count changes (a card picked, the sandbox).
+        int max = drone.HasCrashed ? 0 : drone.MaxBlockCharges;
+        while (blockDotImages.Count < max) blockDotImages.Add(NewBlockDot());
+        for (int i = 0; i < blockDotImages.Count; i++)
+        {
+            Image dot = blockDotImages[i];
+            dot.gameObject.SetActive(i < max);
+            if (i >= max) continue;
+            dot.rectTransform.anchoredPosition = new Vector2((i - (max - 1) * 0.5f) * blockDotSpacing, 0f);
+            dot.color = i < drone.BlockCharges ? blockChargeColor : blockEmptyColor;
+        }
+    }
+
+    Image NewBlockDot()
+    {
+        GameObject go = new GameObject("BlockCharge", typeof(RectTransform));
+        go.transform.SetParent(blockDots, false);
+        RectTransform rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta = new Vector2(blockDotSize, blockDotSize);
+
+        Image img = go.AddComponent<Image>();
+        img.raycastTarget = false;
+        if (crosshairOutline)
+        {
+            Outline outline = go.AddComponent<Outline>();
+            outline.effectColor = crosshairOutlineColor;
+            outline.effectDistance = new Vector2(1f, -1f);
+        }
+        return img;
     }
 
     void BuildScope(Transform parent)
@@ -194,10 +250,24 @@ public class DroneHUD : MonoBehaviour
         vignette.type = Image.Type.Simple;
         vignette.color = WithAlpha(stunColor, 0f);
 
+        // Same generated sprite, tinted yellow: the Block outline. A later sibling, so it wins over
+        // the red border if a stun is still fading out when the block goes up.
+        blockVignette = NewGraphic<Image>(canvasGo.transform, "BlockVignette");
+        blockVignette.sprite = vignette.sprite;
+        blockVignette.type = Image.Type.Simple;
+        blockVignette.color = WithAlpha(blockColor, 0f);
+
         // Sibling order is draw order. The cross goes above the vignette (which is edge-only, so
         // they never overlap anyway) and below the death message, which must win the centre.
         crosshair = BuildCrosshair(canvasGo.transform);
         BuildScope(canvasGo.transform);
+
+        GameObject dots = new GameObject("BlockCharges", typeof(RectTransform));
+        dots.transform.SetParent(canvasGo.transform, false);
+        blockDots = dots.GetComponent<RectTransform>();
+        blockDots.anchorMin = blockDots.anchorMax = blockDots.pivot = new Vector2(0.5f, 0.5f);
+        blockDots.anchoredPosition = new Vector2(0f, -blockDotsOffset);
+        blockDots.sizeDelta = Vector2.zero;
 
         // Added after the vignette, so it is a later sibling and draws on top of it.
         deathText = NewGraphic<Text>(canvasGo.transform, "DeathText");

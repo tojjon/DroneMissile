@@ -5,7 +5,7 @@ using UnityEngine;
 /// The wave run in the Arena (docs/design/game-structure.md, waves.md, docs/decisions.md #23).
 /// Spawns each wave's turrets and yellow rings, notices when the wave is cleared, pauses for the
 /// between-wave screen, and decides what death means: Easy restarts the wave in place, Normal ends
-/// the run. Wave 10 is the boss; clearing it is victory.
+/// the run. Waves 10, 20 and 30 are the boss; clearing the last wave is victory.
 ///
 /// Polls everything - the drone's HasCrashed, the turret list - like the rest of the project.
 /// RunUI polls this in turn. The drone in the Arena has reloadSceneOnDeath off, so this is the only
@@ -16,16 +16,65 @@ public class RunManager : MonoBehaviour
     // Banner: Hardcore's 2 s "wave cleared" between waves - the game keeps running (#25).
     public enum State { Playing, Intermission, Banner, Ended }
 
+    // Ball colours a boss wave allows. Same order as BossTurret.turretPrefabs. None (0) = all four,
+    // so wave tables saved before this field existed keep wave 10 as it was (docs/plans/waves-30.md).
+    [System.Flags]
+    public enum BallColours { None = 0, Grey = 1, Blue = 2, Red = 4, Green = 8 }
+
     [System.Serializable]
     public class Wave
     {
         public int grey, blue, red, green;
         public bool boss;
 
-        public Wave(int grey, int blue, int red, int green, bool boss = false)
+        [Tooltip("Boss waves only: which colours the boss's balls may be. Nothing ticked = all four.")]
+        public BallColours bossBalls;
+
+        public Wave(int grey, int blue, int red, int green, bool boss = false, BallColours bossBalls = BallColours.None)
         {
             this.grey = grey; this.blue = blue; this.red = red; this.green = green; this.boss = boss;
+            this.bossBalls = bossBalls;
         }
+    }
+
+    // The designed table (docs/design/waves.md). Static so Tools > DroneMissile > Apply Wave Table can
+    // write it into Arena.unity - the scene keeps its own serialized copy, which beats this default.
+    public static Wave[] DefaultWaves()
+    {
+        return new[]
+        {
+            new Wave(1, 0, 0, 0),
+            new Wave(2, 0, 0, 0),
+            new Wave(1, 1, 0, 0),
+            new Wave(2, 1, 0, 0),
+            new Wave(2, 0, 1, 0),
+            new Wave(1, 1, 1, 0),
+            new Wave(2, 0, 0, 1),
+            new Wave(1, 1, 1, 1),
+            new Wave(2, 2, 2, 2),
+            new Wave(0, 0, 0, 0, boss: true),                                   // 10
+            new Wave(3, 1, 1, 1),
+            new Wave(2, 2, 1, 1),
+            new Wave(2, 1, 2, 1),
+            new Wave(2, 1, 1, 2),
+            new Wave(3, 2, 2, 1),
+            new Wave(2, 2, 2, 2),
+            new Wave(3, 2, 2, 2),
+            new Wave(2, 3, 3, 2),
+            new Wave(3, 3, 3, 3),
+            new Wave(0, 0, 0, 0, boss: true,                                    // 20: no grey balls
+                     bossBalls: BallColours.Blue | BallColours.Red | BallColours.Green),
+            new Wave(2, 2, 2, 2),
+            new Wave(3, 2, 2, 2),
+            new Wave(2, 3, 2, 3),
+            new Wave(3, 3, 3, 2),
+            new Wave(3, 3, 3, 3),
+            new Wave(4, 3, 3, 3),
+            new Wave(3, 4, 3, 4),
+            new Wave(4, 4, 4, 3),
+            new Wave(4, 4, 4, 4),
+            new Wave(0, 0, 0, 0, boss: true, bossBalls: BallColours.Green),     // 30: green only
+        };
     }
 
     [Header("Turrets")]
@@ -37,19 +86,7 @@ public class RunManager : MonoBehaviour
 
     [Header("Waves")]
     [Tooltip("One entry per wave. The last one is the final wave - clearing it wins the run.")]
-    public Wave[] waves =
-    {
-        new Wave(1, 0, 0, 0),
-        new Wave(2, 0, 0, 0),
-        new Wave(1, 1, 0, 0),
-        new Wave(2, 1, 0, 0),
-        new Wave(2, 0, 1, 0),
-        new Wave(1, 1, 1, 0),
-        new Wave(2, 0, 0, 1),
-        new Wave(1, 1, 1, 1),
-        new Wave(2, 2, 2, 2),
-        new Wave(0, 0, 0, 0, boss: true),
-    };
+    public Wave[] waves = DefaultWaves();
 
     [Header("Arena (set by Tools > DroneMissile > Build Arena)")]
     [Tooltip("Centre of the floor's top surface.")]
@@ -171,6 +208,8 @@ public class RunManager : MonoBehaviour
         if (w.boss && bossTurret != null)
         {
             Boss = SpawnTurret(bossTurret, farFromDrone: true);
+            BossTurret bt = Boss != null ? Boss.GetComponent<BossTurret>() : null;
+            if (bt != null) bt.ballColours = w.bossBalls;
         }
         for (int i = 0; i < w.grey; i++) SpawnTurret(greyTurret);
         for (int i = 0; i < w.blue; i++) SpawnTurret(blueTurret);
