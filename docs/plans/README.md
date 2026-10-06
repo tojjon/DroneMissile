@@ -29,6 +29,7 @@ Věci, které **se dělají nebo jsou jen naplánované** — zadané, ale nepos
 | [Upgrady a karty](upgrades.md) | postaveno, čeká na test | — |
 | [Druhá sada upgradů](upgrades-2.md) | postaveno, čeká na test | switch pro Block na vysílačce (Viktor) |
 | [Vlny do 30, boss na 20 a 30](waves-30.md) | postaveno, čeká na test | — |
+| [Zvuk motorů](motor-sound.md) | postaveno, čeká na test | — |
 | [ESC menu](esc-menu.md) | plánováno | — |
 | [Ukládání a Continue](save-continue.md) | plánováno | nejlépe až po upgradech (ukládají se taky) |
 | [Model kamene a kamenný stun](rock-model.md) | rozpracováno | model (Viktor) |

@@ -60,8 +60,10 @@ public static class MainMenuBuilder
 
         if (drone != null)
         {
-            // DroneStunArcs [RequireComponent]s DroneControls, so it has to go first.
+            // DroneStunArcs and DroneMotorSound [RequireComponent] DroneControls, so they go first.
             RemoveComponent<DroneStunArcs>(drone);
+            RemoveComponent<DroneMotorSound>(drone);
+            RemoveComponent<AudioSource>(drone);
             RemoveComponent<Shoting>(drone);
             RemoveComponent<DroneControls>(drone);
             RemoveComponent<Rigidbody>(drone);

@@ -904,3 +904,42 @@ jedním polem. Maska s nulou = „všechny" nechává stará data (vlna 10) beze
 **Kde:** [features/waves.md](features/waves.md), [features/boss.md](features/boss.md),
 [plans/waves-30.md](plans/waves-30.md)
 
+---
+
+## #30 — Odpor vzduchu dronu je kvadratický, gravitace dronu × 1,5
+
+**Rozhodnutí:** `DroneControls` nuluje `Rigidbody.linearDamping` ve `Start()` a místo něj
+v každém kroku přidá odpor `quadraticDrag · |v| · v` (0,015 /m) a gravitaci navíc
+`(gravityMultiplier − 1) · g` (1,5×). Obojí jako zrychlení, nezávisle na hmotnosti 7,5 g, a působí
+i při stunu a po pádu. Viktor, 06.10.2026: „dron je jak žvýkačka, padá moc pomalu".
+
+**Proč:** Lineární damping brzdí úměrně rychlosti — i pomalý pohyb, takže dron „vázl". Kvadratický
+odpor je při malé rychlosti skoro nulový a sílu má až při rychlém letu, jako skutečný vzduch.
+Vyšší gravitace dává pádu váhu, kterou Viktor chtěl.
+
+**Mění:** hodnotu `linearDamping` 0,3 uloženou ve scénách — kód ji přebíjí (stejně jako CCD v #11).
+Poměr tahu k váze klesá z ~5,4 na ~3,6, `throttleForce` se neškáluje.
+
+**Vylučuje:** nic z [plans/flight-physics.md](plans/flight-physics.md) — mezikrok, plný model ho
+nahradí.
+
+**Kde:** [features/flight.md](features/flight.md), [plans/flight-physics.md](plans/flight-physics.md)
+
+---
+
+## #31 — Zvuk motorů se syntetizuje v kódu, ne z nahrávky
+
+**Rozhodnutí:** `DroneMotorSound` generuje zvuk v `OnAudioFilterRead`: čtyři motory (pilovitý
+tón listu vrtule 120–780 Hz, „chop" šum spínaný průchody listů, saturace), výška hlavně z plynu,
+sticky jen málo rozjedou motory a hlavně přidají chrapot (čisté tóny, které se rozjížděly, zněly
+jako theremin), šum vrtulí a větru. `AudioSource` hraje jen tichý nosný klip. Při pauze
+(`timeScale 0`) se ztlumí, při stunu a po pádu motory doběhnou do ticha. Viktor, 06.10.2026.
+
+**Proč:** Stejně jako efekty ([#16](decisions.md)) — žádné assety v repu, a výška tónu jde plynule
+s otáčkami každého motoru zvlášť, což přeladěný klip neumí bez artefaktů.
+
+**Vylučuje:** volání Unity API v `OnAudioFilterRead` (běží na audio vlákně) — vše, co čte, zapíše
+`Update` do obyčejných polí.
+
+**Kde:** [plans/motor-sound.md](plans/motor-sound.md)
+

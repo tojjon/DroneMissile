@@ -24,7 +24,9 @@ auto-levelu. Je to základ celé hry — když se střílení a let dostanou do 
 | `pitchSpeed` / `rollSpeed` / `yawSpeed` | 100 / 100 / 100 | `DroneControls` |
 | `deadzone` | 0,02 | `DroneControls` |
 | hmotnost | 0,0075 kg | Rigidbody dronu |
-| `linearDamping` / `angularDamping` | 0,3 / 0,5 | Rigidbody dronu |
+| `quadraticDrag` | 0,015 /m | `DroneControls` — odpor ∝ rychlost²; `linearDamping` Rigidbody kód nuluje ([#30](../decisions.md)) |
+| `gravityMultiplier` | 1,5 × | `DroneControls` — dron padá rychleji, tah se tím neškáluje |
+| `angularDamping` | 0,5 | Rigidbody dronu |
 | detekce kolizí | ContinuousDynamic (nastavuje kód) | `DroneControls.Start()` |
 
 Pozor: [design/flight-model.md](../design/flight-model.md) uvádí `throttleForce` 15 — ve scéně je

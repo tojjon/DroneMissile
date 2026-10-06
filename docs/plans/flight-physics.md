@@ -16,6 +16,14 @@ s Viktorem 04.10.2026:
   skutečné vysílačky; do té doby výchozí freestyle Actual 180 / 950 / 0,70.
 - **Stránka Rates v menu**, aby šly měnit bez Unity.
 
+## Mezikrok 06.10.2026 — „dron je jak žvýkačka, padá moc pomalu"
+
+Než se postaví celý model, opraven jen pád ([rozhodnutí #30](../decisions.md)): lineární
+`linearDamping` 0,3 (sirup — brzdil i při 5 m/s o 15 % g, pád max. 32 m/s) nahrazen
+**kvadratickým odporem** `quadraticDrag` 0,015 /m a gravitace dronu **× 1,5**
+(`gravityMultiplier`). Obojí na `DroneControls`, laditelné v Inspectoru. Řádek „odpor" v tabulce
+níž tím je vyřešený jen zčásti — plocha podle natočení a rotor drag zůstávají na plný model.
+
 ## Dnešní stav `[OVĚŘENO 04.10.2026]`
 
 Z pohledu skutečného dronu je dnešní model hodně zjednodušený (`DroneControls.FixedUpdate`):

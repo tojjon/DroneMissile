@@ -15,6 +15,13 @@ public class DroneControls : MonoBehaviour
     public float yawSpeed = 100f;
     public float deadzone = 0.02f;
 
+    [Header("Air")]
+    [Tooltip("Quadratic air drag, per metre (acceleration = k * speed^2). Replaces the Rigidbody's linear damping, which acted like syrup at low speed: 0.3 took 15% of gravity off at 5 m/s. At 0.015 a fall tops out near 31 m/s and full-thrust flight near 60 m/s, but a slow drone feels almost no drag. See docs/decisions.md #30.")]
+    public float quadraticDrag = 0.015f;
+
+    [Tooltip("Gravity on the drone as a multiple of Physics.gravity. Above 1 the drone drops harder and climbs a little slower - throttleForce is not scaled with it.")]
+    public float gravityMultiplier = 1.5f;
+
     [Header("Transmitter Calibration")]
     public bool useTransmitter = true;
 
@@ -75,6 +82,13 @@ public class DroneControls : MonoBehaviour
     // arena keeps the same rhythm as the reload path.
     public bool DeathDelayElapsed => hasCrashed && Time.time >= reloadAt;
 
+    // What the pilot is commanding this physics step, after clamping: throttle 0..1, the rest -1..1.
+    // Zero while stunned or crashed - the motors are off. Read by DroneMotorSound.
+    public float ThrottleInput { get; private set; }
+    public float PitchInput { get; private set; }
+    public float RollInput { get; private set; }
+    public float YawInput { get; private set; }
+
     // Block state for DroneHUD (yellow screen edge, charge dots).
     public bool IsBlocking => !hasCrashed && Time.time < blockUntil;
     public int BlockCharges => blockCharges;
@@ -101,6 +115,10 @@ public class DroneControls : MonoBehaviour
         // projectiles, where it is a no-op. The drone is dynamic. See decisions.md #11.
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
+
+        // Drag comes from quadraticDrag in FixedUpdate. Zeroed from code like CCD above, so the 0.3
+        // still saved on the Rigidbody in every scene cannot come back (decisions.md #30).
+        rb.linearDamping = 0f;
 
         foreach (var device in InputSystem.devices)
         {
@@ -186,11 +204,18 @@ public class DroneControls : MonoBehaviour
 
     void FixedUpdate()
     {
+        // Air and the extra gravity act always - stunned, crashed or flying - so a wreck falls the
+        // same way a live drone does. ForceMode.Acceleration: both are independent of the 7.5 g mass.
+        Vector3 v = rb.linearVelocity;
+        rb.AddForce(-quadraticDrag * v.magnitude * v, ForceMode.Acceleration);
+        if (rb.useGravity) rb.AddForce(Physics.gravity * (gravityMultiplier - 1f), ForceMode.Acceleration);
+
         // Crashed: input is dead, but physics keeps stepping so the wreck tumbles under the death
         // message. Nothing here can fire twice - OnCollisionEnter tests !hasCrashed, the kill plane
         // check sits below this return, and Stun() bails on hasCrashed.
         if (hasCrashed)
         {
+            SetInputs(0f, 0f, 0f, 0f);
             if (reloadSceneOnDeath && Time.time >= reloadAt) SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             return;
         }
@@ -212,7 +237,11 @@ public class DroneControls : MonoBehaviour
         if (!armed && transform.position.y > spawnY + armAltitude) armed = true;
 
         // Stunned: no thrust and no MoveRotation, so the drone holds its last attitude and falls.
-        if (Time.time < stunnedUntil) return;
+        if (Time.time < stunnedUntil)
+        {
+            SetInputs(0f, 0f, 0f, 0f);
+            return;
+        }
 
         float throttleInput = 0f;
         float pitchInput = 0f;
@@ -251,6 +280,7 @@ public class DroneControls : MonoBehaviour
         pitchInput = Mathf.Clamp(pitchInput, -1f, 1f);
         rollInput = Mathf.Clamp(rollInput, -1f, 1f);
         yawInput = Mathf.Clamp(yawInput, -1f, 1f);
+        SetInputs(throttleInput, pitchInput, rollInput, yawInput);
 
         rb.AddForce(transform.up * throttleInput * throttleForce, ForceMode.Force);
 
@@ -261,6 +291,14 @@ public class DroneControls : MonoBehaviour
         );
 
         rb.MoveRotation(rb.rotation * deltaRotation);
+    }
+
+    void SetInputs(float throttle, float pitch, float roll, float yaw)
+    {
+        ThrottleInput = throttle;
+        PitchInput = pitch;
+        RollInput = roll;
+        YawInput = yaw;
     }
 
     // Any solid contact ends the run - terrain, the ground slab, a turret. The drone has no health;

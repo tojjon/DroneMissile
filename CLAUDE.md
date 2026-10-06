@@ -94,7 +94,7 @@ editor log to stdout; without it the log goes to `Logs/` (gitignored).
 
 ## Architecture
 
-Twenty-four `MonoBehaviour` scripts, one `ScriptableObject` (`UpgradeDefinition`) and static helpers (`FxAssets`, `GameSession`, `UiKit`, `UpgradeCatalog`, `Rarities`, `UpgradeIds`) in `Assets/scripts/`, no assembly
+Twenty-five `MonoBehaviour` scripts, one `ScriptableObject` (`UpgradeDefinition`) and static helpers (`FxAssets`, `GameSession`, `UiKit`, `UpgradeCatalog`, `Rarities`, `UpgradeIds`) in `Assets/scripts/`, no assembly
 definitions — everything compiles into the default `Assembly-CSharp`. There is no manager, service
 locator, or event bus; components find each other at runtime through **Unity tags**, and are wired
 to prefabs/scene objects through serialized public fields set in the Inspector. `Assets/Editor/`
@@ -453,7 +453,10 @@ shot. Don't move this back to `Start()`. Two further constraints hold this toget
     the same sweep only if reliable enemy hits are ever wanted.
 
 **Drone flight** (`DroneControls`) is the one physics-driven component: `FixedUpdate` sums keyboard
-and transmitter input, then `rb.AddForce(transform.up * throttle)` plus `rb.MoveRotation`. Thrust is
+and transmitter input, then `rb.AddForce(transform.up * throttle)` plus `rb.MoveRotation`. Air is
+code too ([decision #30](docs/decisions.md)): `Start()` zeroes `linearDamping` (the scenes still
+save 0.3 — the code wins) and `FixedUpdate` adds quadratic drag (`quadraticDrag`) and extra gravity
+(`gravityMultiplier`, 1.5×) on every step, stunned and crashed included. Thrust is
 body-relative, so the drone tilts to translate — there is no stabilization or auto-level.
 
 **Transmitter handling is duplicated.** `DroneControls.Start()` and `Shoting.Start()` each contain
@@ -465,6 +468,13 @@ A missing control returns `0f` silently, so a mismatched transmitter reads as "n
 paths are hardware-specific; `DroneControls.Start()` logs every device and control it finds, which
 is the intended way to recalibrate for a different transmitter. Change an axis mapping in **both**
 scripts.
+
+**Motor sound is synthesised, not a clip** ([decision #31](docs/decisions.md)). `DroneMotorSound`
+(on the drone, added by `Tools > DroneMissile > Build Drone Motor Sound` to SampleScene, Sandbox and
+Arena; `MainMenuBuilder` strips it and its `AudioSource`) mixes `DroneControls.ThrottleInput` /
+`PitchInput` / `RollInput` / `YawInput` (zero while stunned or crashed) into four motor targets in
+`Update`; `OnAudioFilterRead` runs on the **audio thread** and may only read plain fields — no Unity
+API there. The `AudioSource` plays a silent looping carrier clip just to keep the filter running.
 
 Keyboard fallback: `LeftShift`/`LeftCtrl` throttle, `WASD` pitch/roll, `Q`/`E` yaw, `Space` fire.
 
